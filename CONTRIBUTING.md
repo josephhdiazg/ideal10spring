@@ -31,16 +31,30 @@ develop
 
 All commit messages must be written in English.
 
-Use short, clear, and descriptive messages. Prefer the imperative mood.
+Use Conventional Commits with short, clear, and descriptive messages:
+
+```text
+<type>: <description>
+```
+
+Recommended types:
+
+- `feat`: new feature or functional capability.
+- `fix`: bug fix.
+- `docs`: documentation-only change.
+- `config`: configuration change.
+- `test`: test change.
+- `refactor`: code change that does not add behavior or fix a bug.
+- `chore`: maintenance change.
 
 Good examples:
 
 ```bash
-Add municipality entity
-Create property owner repository
-Configure PostgreSQL datasource
-Validate cadastral code uniqueness
-Add property ownership endpoints
+feat: add municipality entity
+feat: create property owner repository
+config: configure PostgreSQL datasource
+fix: validate cadastral code uniqueness
+feat: add property ownership endpoints
 ```
 
 Bad examples:
@@ -58,16 +72,16 @@ avance omar
 Use this format when possible:
 
 ```text
-<action> <what changed>
+<type>: <what changed>
 ```
 
 Examples:
 
 ```bash
-Add owner request DTO
-Update property validation rules
-Fix municipality lookup by id
-Remove unused cadastral service method
+feat: add owner request DTO
+fix: update property validation rules
+fix: fix municipality lookup by id
+refactor: remove unused cadastral service method
 ```
 
 ## Pull Request Rules
