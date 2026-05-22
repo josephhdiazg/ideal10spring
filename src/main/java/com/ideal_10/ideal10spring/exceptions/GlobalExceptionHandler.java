@@ -16,6 +16,16 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.UNAUTHORIZED, "Invalid username or password");
 	}
 
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ErrorResponseDto> handleNotFound(ResourceNotFoundException ex) {
+		return build(HttpStatus.NOT_FOUND, ex.getMessage());
+	}
+
+	@ExceptionHandler(DuplicateResourceException.class)
+	public ResponseEntity<ErrorResponseDto> handleDuplicate(DuplicateResourceException ex) {
+		return build(HttpStatus.CONFLICT, ex.getMessage());
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponseDto> handleValidation(MethodArgumentNotValidException ex) {
 		String message = ex.getBindingResult().getFieldErrors().stream()
