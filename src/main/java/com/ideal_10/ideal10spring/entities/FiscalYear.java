@@ -19,7 +19,7 @@ import java.time.LocalDate;
 @Table(
         name = "fiscal_years",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_fiscal_years_year", columnNames = {"year"})
+                @UniqueConstraint(name = "uk_fiscal_years_year_value", columnNames = {"year_value"})
         }
 )
 public class FiscalYear {
@@ -29,7 +29,7 @@ public class FiscalYear {
     private Long id;
 
     @NotNull
-    @Column(nullable = false, unique = true)
+    @Column(name = "year_value", nullable = false, unique = true)
     private Integer year;
 
     @Column(length = 255)
