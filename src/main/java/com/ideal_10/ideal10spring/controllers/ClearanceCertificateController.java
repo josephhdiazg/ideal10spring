@@ -1,7 +1,7 @@
 package com.ideal_10.ideal10spring.controllers;
 
-import com.ideal_10.ideal10spring.dtos.CertificadoPazSalvoResponse;
-import com.ideal_10.ideal10spring.services.CertificadoPazSalvoService;
+import com.ideal_10.ideal10spring.dtos.ClearanceCertificateResponse;
+import com.ideal_10.ideal10spring.services.ClearanceCertificateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,17 +13,17 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/clearance-certificates")
-public class CertificadoPazSalvoController {
+public class ClearanceCertificateController {
 
-    private final CertificadoPazSalvoService certificadoService;
+    private final ClearanceCertificateService certificateService;
 
     @GetMapping
-    public List<CertificadoPazSalvoResponse> findAll() {
-        return certificadoService.findAll();
+    public List<ClearanceCertificateResponse> findAll() {
+        return certificateService.findAll();
     }
 
     @GetMapping("/{id}")
-    public CertificadoPazSalvoResponse findById(@PathVariable Long id) {
-        return certificadoService.findById(id);
+    public ClearanceCertificateResponse findById(@PathVariable Long id) {
+        return certificateService.findById(id);
     }
 }

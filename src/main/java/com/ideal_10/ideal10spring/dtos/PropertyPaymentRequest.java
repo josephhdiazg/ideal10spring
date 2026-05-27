@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-public record PagoPredialRequest(
+public record PropertyPaymentRequest(
         @NotNull @DecimalMin("0.01") BigDecimal amount,
         @NotNull MetodoPago paymentMethod,
         @Size(max = 80) String reference

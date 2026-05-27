@@ -1,18 +1,18 @@
 package com.ideal_10.ideal10spring.services;
 
-import com.ideal_10.ideal10spring.dtos.DetalleLiquidacionResponse;
-import com.ideal_10.ideal10spring.dtos.LiquidacionPredialRequest;
-import com.ideal_10.ideal10spring.dtos.LiquidacionPredialResponse;
-import com.ideal_10.ideal10spring.entities.DetalleLiquidacion;
-import com.ideal_10.ideal10spring.entities.LiquidacionPredial;
+import com.ideal_10.ideal10spring.dtos.AssessmentDetailResponse;
+import com.ideal_10.ideal10spring.dtos.PropertyAssessmentRequest;
+import com.ideal_10.ideal10spring.dtos.PropertyAssessmentResponse;
+import com.ideal_10.ideal10spring.entities.AssessmentDetail;
+import com.ideal_10.ideal10spring.entities.PropertyAssessment;
 import com.ideal_10.ideal10spring.entities.Property;
 import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
 import com.ideal_10.ideal10spring.enums.PropertyStatus;
 import com.ideal_10.ideal10spring.enums.TipoMovimientoLiquidacion;
 import com.ideal_10.ideal10spring.exceptions.DuplicateResourceException;
 import com.ideal_10.ideal10spring.exceptions.ResourceNotFoundException;
-import com.ideal_10.ideal10spring.repositories.DetalleLiquidacionRepository;
-import com.ideal_10.ideal10spring.repositories.LiquidacionPredialRepository;
+import com.ideal_10.ideal10spring.repositories.AssessmentDetailRepository;
+import com.ideal_10.ideal10spring.repositories.PropertyAssessmentRepository;
 import com.ideal_10.ideal10spring.repositories.PropertyOwnerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,37 +25,37 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class LiquidacionPredialService {
+public class PropertyAssessmentService {
 
     private static final BigDecimal TEMPORARY_TAX_RATE = new BigDecimal("0.01");
 
-    private final LiquidacionPredialRepository liquidacionRepository;
-    private final DetalleLiquidacionRepository detalleRepository;
+    private final PropertyAssessmentRepository assessmentRepository;
+    private final AssessmentDetailRepository detailRepository;
     private final PropertyOwnerRepository propertyOwnerRepository;
     private final PropertyService propertyService;
 
     @Transactional(readOnly = true)
-    public List<LiquidacionPredialResponse> findAll() {
-        return liquidacionRepository.findAll().stream()
+    public List<PropertyAssessmentResponse> findAll() {
+        return assessmentRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public LiquidacionPredialResponse findById(Long id) {
+    public PropertyAssessmentResponse findById(Long id) {
         return toResponse(getEntity(id));
     }
 
     @Transactional(readOnly = true)
-    public List<LiquidacionPredialResponse> findByProperty(Long propertyId) {
+    public List<PropertyAssessmentResponse> findByProperty(Long propertyId) {
         propertyService.getEntity(propertyId);
-        return liquidacionRepository.findByPropertyId(propertyId).stream()
+        return assessmentRepository.findByPropertyId(propertyId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional
-    public LiquidacionPredialResponse create(LiquidacionPredialRequest request) {
+    public PropertyAssessmentResponse create(PropertyAssessmentRequest request) {
         Property property = propertyService.getEntity(request.propertyId());
         validatePropertyCanBeLiquidated(property);
         validateUniqueLiquidation(request.propertyId(), request.fiscalYear());
@@ -68,61 +68,61 @@ public class LiquidacionPredialService {
             throw new IllegalArgumentException("Liquidation total cannot be negative");
         }
 
-        LiquidacionPredial liquidacion = new LiquidacionPredial();
-        liquidacion.setProperty(property);
-        liquidacion.setFiscalYear(request.fiscalYear());
-        liquidacion.setIssueDate(LocalDate.now());
-        liquidacion.setDueDate(request.dueDate() == null ? LocalDate.now().plusDays(30) : request.dueDate());
-        liquidacion.setSubtotal(subtotal);
-        liquidacion.setDiscountAmount(discount);
-        liquidacion.setInterestAmount(interest);
-        liquidacion.setTotalAmount(money(total));
-        liquidacion.setBalance(money(total));
-        liquidacion.setStatus(EstadoLiquidacion.PENDIENTE);
+        PropertyAssessment assessment = new PropertyAssessment();
+        assessment.setProperty(property);
+        assessment.setFiscalYear(request.fiscalYear());
+        assessment.setIssueDate(LocalDate.now());
+        assessment.setDueDate(request.dueDate() == null ? LocalDate.now().plusDays(30) : request.dueDate());
+        assessment.setSubtotal(subtotal);
+        assessment.setDiscountAmount(discount);
+        assessment.setInterestAmount(interest);
+        assessment.setTotalAmount(money(total));
+        assessment.setBalance(money(total));
+        assessment.setStatus(EstadoLiquidacion.PENDIENTE);
 
-        LiquidacionPredial saved = liquidacionRepository.save(liquidacion);
-        createDetail(saved, TipoMovimientoLiquidacion.CARGO, "Impuesto predial base temporal 1% avaluo", subtotal);
+        PropertyAssessment saved = assessmentRepository.save(assessment);
+        createDetail(saved, TipoMovimientoLiquidacion.CARGO, "Temporary base property tax 1% assessed value", subtotal);
         if (discount.compareTo(BigDecimal.ZERO) > 0) {
-            createDetail(saved, TipoMovimientoLiquidacion.DESCUENTO, "Descuento aplicado", discount);
+            createDetail(saved, TipoMovimientoLiquidacion.DESCUENTO, "Applied discount", discount);
         }
         if (interest.compareTo(BigDecimal.ZERO) > 0) {
-            createDetail(saved, TipoMovimientoLiquidacion.INTERES, "Intereses aplicados", interest);
+            createDetail(saved, TipoMovimientoLiquidacion.INTERES, "Applied interest", interest);
         }
         return toResponse(saved);
     }
 
     @Transactional
-    public LiquidacionPredial updateAfterPayment(LiquidacionPredial liquidacion, BigDecimal paymentAmount) {
-        BigDecimal newBalance = money(liquidacion.getBalance().subtract(paymentAmount));
-        liquidacion.setBalance(newBalance);
-        liquidacion.setStatus(newBalance.compareTo(BigDecimal.ZERO) == 0
+    public PropertyAssessment updateAfterPayment(PropertyAssessment assessment, BigDecimal paymentAmount) {
+        BigDecimal newBalance = money(assessment.getBalance().subtract(paymentAmount));
+        assessment.setBalance(newBalance);
+        assessment.setStatus(newBalance.compareTo(BigDecimal.ZERO) == 0
                 ? EstadoLiquidacion.PAGADA
                 : EstadoLiquidacion.PARCIAL);
-        return liquidacion;
+        return assessment;
     }
 
-    public LiquidacionPredial getEntity(Long id) {
-        return liquidacionRepository.findById(id)
+    public PropertyAssessment getEntity(Long id) {
+        return assessmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Liquidation not found with id " + id));
     }
 
-    public LiquidacionPredialResponse toResponse(LiquidacionPredial liquidacion) {
-        List<DetalleLiquidacionResponse> details = detalleRepository.findByLiquidacionId(liquidacion.getId()).stream()
+    public PropertyAssessmentResponse toResponse(PropertyAssessment assessment) {
+        List<AssessmentDetailResponse> details = detailRepository.findByAssessmentId(assessment.getId()).stream()
                 .map(this::toDetailResponse)
                 .toList();
-        return new LiquidacionPredialResponse(
-                liquidacion.getId(),
-                liquidacion.getProperty().getId(),
-                liquidacion.getProperty().getCadastralCode(),
-                liquidacion.getFiscalYear(),
-                liquidacion.getIssueDate(),
-                liquidacion.getDueDate(),
-                liquidacion.getSubtotal(),
-                liquidacion.getDiscountAmount(),
-                liquidacion.getInterestAmount(),
-                liquidacion.getTotalAmount(),
-                liquidacion.getBalance(),
-                liquidacion.getStatus(),
+        return new PropertyAssessmentResponse(
+                assessment.getId(),
+                assessment.getProperty().getId(),
+                assessment.getProperty().getCadastralCode(),
+                assessment.getFiscalYear(),
+                assessment.getIssueDate(),
+                assessment.getDueDate(),
+                assessment.getSubtotal(),
+                assessment.getDiscountAmount(),
+                assessment.getInterestAmount(),
+                assessment.getTotalAmount(),
+                assessment.getBalance(),
+                assessment.getStatus(),
                 details
         );
     }
@@ -137,28 +137,28 @@ public class LiquidacionPredialService {
     }
 
     private void validateUniqueLiquidation(Long propertyId, Integer fiscalYear) {
-        liquidacionRepository.findByPropertyIdAndFiscalYear(propertyId, fiscalYear)
+        assessmentRepository.findByPropertyIdAndFiscalYear(propertyId, fiscalYear)
                 .ifPresent(existing -> {
                     throw new DuplicateResourceException("Liquidation already exists for this property and fiscal year");
                 });
     }
 
     private void createDetail(
-            LiquidacionPredial liquidacion,
+            PropertyAssessment assessment,
             TipoMovimientoLiquidacion movementType,
             String concept,
             BigDecimal amount
     ) {
-        DetalleLiquidacion detail = new DetalleLiquidacion();
-        detail.setLiquidacion(liquidacion);
+        AssessmentDetail detail = new AssessmentDetail();
+        detail.setAssessment(assessment);
         detail.setMovementType(movementType);
         detail.setConcept(concept);
         detail.setAmount(money(amount));
-        detalleRepository.save(detail);
+        detailRepository.save(detail);
     }
 
-    private DetalleLiquidacionResponse toDetailResponse(DetalleLiquidacion detail) {
-        return new DetalleLiquidacionResponse(
+    private AssessmentDetailResponse toDetailResponse(AssessmentDetail detail) {
+        return new AssessmentDetailResponse(
                 detail.getId(),
                 detail.getMovementType(),
                 detail.getConcept(),
