@@ -4,16 +4,22 @@ import com.ideal_10.ideal10spring.dtos.AssessmentDetailResponse;
 import com.ideal_10.ideal10spring.dtos.PropertyAssessmentRequest;
 import com.ideal_10.ideal10spring.dtos.PropertyAssessmentResponse;
 import com.ideal_10.ideal10spring.entities.AssessmentDetail;
+import com.ideal_10.ideal10spring.entities.FiscalYear;
 import com.ideal_10.ideal10spring.entities.PropertyAssessment;
 import com.ideal_10.ideal10spring.entities.Property;
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
+import com.ideal_10.ideal10spring.entities.TaxRate;
+import com.ideal_10.ideal10spring.enums.AssessmentMovementType;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
+import com.ideal_10.ideal10spring.enums.PropertyClassification;
 import com.ideal_10.ideal10spring.enums.PropertyStatus;
-import com.ideal_10.ideal10spring.enums.TipoMovimientoLiquidacion;
+import com.ideal_10.ideal10spring.enums.PropertyUse;
 import com.ideal_10.ideal10spring.exceptions.DuplicateResourceException;
 import com.ideal_10.ideal10spring.exceptions.ResourceNotFoundException;
 import com.ideal_10.ideal10spring.repositories.AssessmentDetailRepository;
+import com.ideal_10.ideal10spring.repositories.FiscalYearRepository;
 import com.ideal_10.ideal10spring.repositories.PropertyAssessmentRepository;
 import com.ideal_10.ideal10spring.repositories.PropertyOwnerRepository;
+import com.ideal_10.ideal10spring.repositories.TaxRateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,12 +33,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PropertyAssessmentService {
 
-    private static final BigDecimal TEMPORARY_TAX_RATE = new BigDecimal("0.01");
+    private static final BigDecimal ONE_THOUSAND = new BigDecimal("1000");
 
     private final PropertyAssessmentRepository assessmentRepository;
     private final AssessmentDetailRepository detailRepository;
     private final PropertyOwnerRepository propertyOwnerRepository;
     private final PropertyService propertyService;
+    private final FiscalYearRepository fiscalYearRepository;
+    private final TaxRateRepository taxRateRepository;
 
     @Transactional(readOnly = true)
     public List<PropertyAssessmentResponse> findAll() {
@@ -66,14 +74,21 @@ public class PropertyAssessmentService {
     public PropertyAssessmentResponse create(PropertyAssessmentRequest request) {
         Property property = propertyService.getEntity(request.propertyId());
         validatePropertyCanBeLiquidated(property);
-        validateUniqueLiquidation(request.propertyId(), request.fiscalYear());
+        validateUniqueAssessment(request.propertyId(), request.fiscalYear());
 
-        BigDecimal subtotal = money(property.getCadastralValue().multiply(TEMPORARY_TAX_RATE));
+        FiscalYear fiscalYear = getActiveFiscalYear(request.fiscalYear());
+        TaxRate taxRate = getActiveTaxRate(fiscalYear, classifyProperty(property));
+
+        BigDecimal subtotal = money(
+                property.getCadastralValue()
+                        .multiply(taxRate.getRatePerThousand())
+                        .divide(ONE_THOUSAND, 2, RoundingMode.HALF_UP)
+        );
         BigDecimal discount = money(defaultZero(request.discountAmount()));
         BigDecimal interest = money(defaultZero(request.interestAmount()));
         BigDecimal total = subtotal.subtract(discount).add(interest);
         if (total.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Liquidation total cannot be negative");
+            throw new IllegalArgumentException("Assessment total cannot be negative");
         }
 
         PropertyAssessment assessment = new PropertyAssessment();
@@ -86,15 +101,15 @@ public class PropertyAssessmentService {
         assessment.setInterestAmount(interest);
         assessment.setTotalAmount(money(total));
         assessment.setBalance(money(total));
-        assessment.setStatus(EstadoLiquidacion.PENDIENTE);
+        assessment.setStatus(AssessmentStatus.PENDING);
 
         PropertyAssessment saved = assessmentRepository.save(assessment);
-        createDetail(saved, TipoMovimientoLiquidacion.CARGO, "Temporary base property tax 1% assessed value", subtotal);
+        createDetail(saved, AssessmentMovementType.CHARGE, "Base property tax", subtotal);
         if (discount.compareTo(BigDecimal.ZERO) > 0) {
-            createDetail(saved, TipoMovimientoLiquidacion.DESCUENTO, "Applied discount", discount);
+            createDetail(saved, AssessmentMovementType.DISCOUNT, "Applied discount", discount);
         }
         if (interest.compareTo(BigDecimal.ZERO) > 0) {
-            createDetail(saved, TipoMovimientoLiquidacion.INTERES, "Applied interest", interest);
+            createDetail(saved, AssessmentMovementType.INTEREST, "Applied interest", interest);
         }
         return toResponse(saved);
     }
@@ -104,14 +119,14 @@ public class PropertyAssessmentService {
         BigDecimal newBalance = money(assessment.getBalance().subtract(paymentAmount));
         assessment.setBalance(newBalance);
         assessment.setStatus(newBalance.compareTo(BigDecimal.ZERO) == 0
-                ? EstadoLiquidacion.PAGADA
-                : EstadoLiquidacion.PARCIAL);
+                ? AssessmentStatus.PAID
+                : AssessmentStatus.PARTIAL);
         return assessment;
     }
 
     public PropertyAssessment getEntity(Long id) {
         return assessmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Liquidation not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Assessment not found with id " + id));
     }
 
     public PropertyAssessmentResponse toResponse(PropertyAssessment assessment) {
@@ -137,23 +152,47 @@ public class PropertyAssessmentService {
 
     private void validatePropertyCanBeLiquidated(Property property) {
         if (property.getStatus() != PropertyStatus.ACTIVE) {
-            throw new IllegalArgumentException("Only active properties can be liquidated");
+            throw new IllegalArgumentException("Only active properties can be assessed");
         }
         if (propertyOwnerRepository.findByPropertyId(property.getId()).isEmpty()) {
-            throw new IllegalArgumentException("Property must have at least one owner before liquidation");
+            throw new IllegalArgumentException("Property must have at least one owner before assessment");
         }
     }
 
-    private void validateUniqueLiquidation(Long propertyId, Integer fiscalYear) {
+    private void validateUniqueAssessment(Long propertyId, Integer fiscalYear) {
         assessmentRepository.findByPropertyIdAndFiscalYear(propertyId, fiscalYear)
                 .ifPresent(existing -> {
-                    throw new DuplicateResourceException("Liquidation already exists for this property and fiscal year");
+                    throw new DuplicateResourceException("Assessment already exists for this property and fiscal year");
                 });
+    }
+
+    private FiscalYear getActiveFiscalYear(Integer year) {
+        FiscalYear fiscalYear = fiscalYearRepository.findByYear(year)
+                .orElseThrow(() -> new ResourceNotFoundException("Fiscal year not found for year " + year));
+        if (!Boolean.TRUE.equals(fiscalYear.getActive())) {
+            throw new IllegalArgumentException("Fiscal year must be active to create an assessment");
+        }
+        return fiscalYear;
+    }
+
+    private TaxRate getActiveTaxRate(FiscalYear fiscalYear, PropertyClassification classification) {
+        return taxRateRepository.findByFiscalYearIdAndClassification(fiscalYear.getId(), classification)
+                .filter(taxRate -> Boolean.TRUE.equals(taxRate.getActive()))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Active tax rate not found for fiscal year and property classification"
+                ));
+    }
+
+    private PropertyClassification classifyProperty(Property property) {
+        if (property.getPropertyUse() == PropertyUse.RURAL) {
+            return PropertyClassification.RURAL;
+        }
+        return PropertyClassification.URBAN;
     }
 
     private void createDetail(
             PropertyAssessment assessment,
-            TipoMovimientoLiquidacion movementType,
+            AssessmentMovementType movementType,
             String concept,
             BigDecimal amount
     ) {
