@@ -53,8 +53,13 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
 						.requestMatchers("/h2-console/**").permitAll()
+						.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
 						.requestMatchers("/api/v1/usuarios/**").hasRole(ADMINISTRADOR)
+						.requestMatchers("/api/v1/fiscal-years/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
+						.requestMatchers("/api/v1/tax-rates/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
+						.requestMatchers("/api/v1/charge-types/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
+						.requestMatchers("/api/v1/tax-benefits/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
 						.requestMatchers(HttpMethod.GET, "/api/v1/predios/**")
 						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, TESORERIA)
 						.requestMatchers(HttpMethod.POST, "/api/v1/predios/**")
