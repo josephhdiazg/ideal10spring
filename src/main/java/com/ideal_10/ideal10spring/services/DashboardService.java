@@ -1,8 +1,8 @@
 package com.ideal_10.ideal10spring.services;
 
 import com.ideal_10.ideal10spring.dtos.PropertyDashboardResponse;
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
-import com.ideal_10.ideal10spring.enums.EstadoPago;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
+import com.ideal_10.ideal10spring.enums.PaymentStatus;
 import com.ideal_10.ideal10spring.repositories.PropertyAssessmentRepository;
 import com.ideal_10.ideal10spring.repositories.PropertyPaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,17 +23,17 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public PropertyDashboardResponse getPropertyTaxMetrics() {
-        Map<String, Long> liquidationsByStatus = Arrays.stream(EstadoLiquidacion.values())
+        Map<String, Long> assessmentsByStatus = Arrays.stream(AssessmentStatus.values())
                 .collect(Collectors.toMap(Enum::name, assessmentRepository::countByStatus));
 
         return new PropertyDashboardResponse(
-                liquidationsByStatus,
+                assessmentsByStatus,
                 assessmentRepository.sumTotalAmount(),
-                paymentRepository.sumAmountByStatus(EstadoPago.REGISTRADO),
+                paymentRepository.sumAmountByStatus(PaymentStatus.REGISTERED),
                 assessmentRepository.sumBalanceByStatuses(List.of(
-                        EstadoLiquidacion.PENDIENTE,
-                        EstadoLiquidacion.PARCIAL,
-                        EstadoLiquidacion.VENCIDA
+                        AssessmentStatus.PENDING,
+                        AssessmentStatus.PARTIAL,
+                        AssessmentStatus.OVERDUE
                 ))
         );
     }

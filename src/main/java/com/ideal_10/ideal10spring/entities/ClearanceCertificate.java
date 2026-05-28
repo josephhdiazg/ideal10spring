@@ -1,6 +1,6 @@
 package com.ideal_10.ideal10spring.entities;
 
-import com.ideal_10.ideal10spring.enums.EstadoCertificado;
+import com.ideal_10.ideal10spring.enums.CertificateStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -47,5 +47,5 @@ public class ClearanceCertificate {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private EstadoCertificado status = EstadoCertificado.GENERADO;
+    private CertificateStatus status = CertificateStatus.ISSUED;
 }
