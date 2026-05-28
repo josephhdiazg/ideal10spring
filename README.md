@@ -1,5 +1,12 @@
 # ideal10spring
 
+## Local configuration
+
+Runtime database credentials must not be committed to Git. Copy `.env.example`
+to `.env` and replace the placeholder values with your local database settings.
+
+Spring Boot imports `.env` automatically when the application starts.
+
 ## Test users
 
 The application seeds one user per role on startup:
