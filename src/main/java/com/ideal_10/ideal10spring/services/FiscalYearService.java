@@ -53,9 +53,21 @@ public class FiscalYearService {
         fiscalYearRepository.delete(getEntity(id));
     }
 
+    @Transactional(readOnly = true)
+    public FiscalYearResponse findActive() {
+        return fiscalYearRepository.findByActiveTrue()
+                .map(fiscalYearMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("No active fiscal year found"));
+    }
+
     public FiscalYear getEntity(Long id) {
         return fiscalYearRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fiscal year not found with id " + id));
+    }
+
+    public FiscalYear getActiveEntity() {
+        return fiscalYearRepository.findByActiveTrue()
+                .orElseThrow(() -> new ResourceNotFoundException("No active fiscal year found"));
     }
 
     private void applyRequest(FiscalYear fiscalYear, FiscalYearRequest request) {

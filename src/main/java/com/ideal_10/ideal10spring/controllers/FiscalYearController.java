@@ -30,6 +30,11 @@ public class FiscalYearController {
         return fiscalYearService.findAll();
     }
 
+    @GetMapping("/active")
+    public FiscalYearResponse findActive() {
+        return fiscalYearService.findActive();
+    }
+
     @GetMapping("/{id}")
     public FiscalYearResponse findById(@PathVariable Long id) {
         return fiscalYearService.findById(id);
