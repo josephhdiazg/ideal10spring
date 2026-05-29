@@ -127,14 +127,14 @@ export const resources = [
     accent: 'indigo',
     operations: { create: true, update: true, delete: true },
     columns: [
-      { key: 'year', label: 'Anio' },
+      { key: 'year', label: 'Año' },
       { key: 'description', label: 'Descripcion' },
       { key: 'startDate', label: 'Inicio', value: (row) => date(row.startDate) },
       { key: 'endDate', label: 'Fin', value: (row) => date(row.endDate) },
       { key: 'active', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'year', label: 'Anio', type: 'number', required: true },
+      { key: 'year', label: 'Año', type: 'number', required: true },
       { key: 'description', label: 'Descripcion', type: 'textarea', nullable: true },
       { key: 'startDate', label: 'Fecha inicio', type: 'date', required: true },
       { key: 'endDate', label: 'Fecha fin', type: 'date', required: true },
@@ -152,7 +152,7 @@ export const resources = [
     accent: 'violet',
     operations: { create: true, update: true, delete: true },
     columns: [
-      { key: 'year', label: 'Anio' },
+      { key: 'year', label: 'Año' },
       { key: 'classification', label: 'Clasificacion' },
       { key: 'ratePerThousand', label: 'Tarifa por mil' },
       { key: 'active', label: 'Estado', type: 'status' },
@@ -232,7 +232,7 @@ export const resources = [
     filters: [{ key: 'propertyId', label: 'Predio', type: 'select', source: source('/api/v1/properties', (item) => item.cadastralCode) }],
     columns: [
       { key: 'cadastralCode', label: 'Predio' },
-      { key: 'fiscalYear', label: 'Anio' },
+      { key: 'fiscalYear', label: 'Año' },
       { key: 'totalAmount', label: 'Total', value: (row) => money(row.totalAmount), align: 'right' },
       { key: 'balance', label: 'Saldo', value: (row) => money(row.balance), align: 'right' },
       { key: 'status', label: 'Estado', type: 'status' },
@@ -245,7 +245,7 @@ export const resources = [
         source: source('/api/v1/properties', (item) => `${item.cadastralCode} - ${item.address}`),
         required: true,
       },
-      { key: 'fiscalYear', label: 'Anio fiscal', type: 'number', required: true },
+      { key: 'fiscalYear', label: 'Año fiscal', type: 'number', required: true },
       { key: 'discountAmount', label: 'Descuento', type: 'number', min: 0, step: 0.01, default: 0, nullable: true },
       { key: 'interestAmount', label: 'Interes', type: 'number', min: 0, step: 0.01, default: 0, nullable: true },
       { key: 'dueDate', label: 'Fecha vencimiento', type: 'date', nullable: true },
