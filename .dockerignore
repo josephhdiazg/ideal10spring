@@ -1,0 +1,10 @@
+.git
+.github
+.idea
+target
+frontend/node_modules
+frontend/dist
+.env
+*.log
+Dockerfile
+docker-compose.yml
