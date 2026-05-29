@@ -25,15 +25,15 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @Table(
-        name = "liquidaciones_prediales",
+        name = "property_assessments",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_liquidaciones_property_year",
+                        name = "uk_property_assessments_property_year",
                         columnNames = {"property_id", "fiscal_year"}
                 )
         }
 )
-public class LiquidacionPredial {
+public class PropertyAssessment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
