@@ -8,31 +8,32 @@ import {
   Landmark,
   Percent,
   ReceiptText,
-  ShieldCheck,
   Tags,
   UsersRound,
   WalletCards,
 } from '@lucide/vue'
 
-const boolOptions = [
+export const boolOptions = [
   { label: 'Activo', value: true },
   { label: 'Inactivo', value: false },
 ]
 
-const propertyUseOptions = ['RESIDENTIAL', 'COMMERCIAL', 'INDUSTRIAL', 'RURAL', 'INSTITUTIONAL']
-const propertyStatusOptions = ['ACTIVE', 'INACTIVE', 'BLOCKED']
-const classificationOptions = ['URBAN', 'RURAL']
-const paymentMethodOptions = ['CASH', 'TRANSFER', 'DEPOSIT', 'CARD', 'OTHER']
+export const propertyUseOptions = ['RESIDENTIAL', 'COMMERCIAL', 'INDUSTRIAL', 'RURAL', 'INSTITUTIONAL']
+export const propertyStatusOptions = ['ACTIVE', 'INACTIVE', 'BLOCKED']
+export const classificationOptions = ['URBAN', 'RURAL']
+export const paymentMethodOptions = ['CASH', 'TRANSFER', 'DEPOSIT', 'CARD', 'OTHER']
 
-const money = (value) => value == null ? '-' : new Intl.NumberFormat('es-CO', {
+export const money = (value) => value == null ? '-' : new Intl.NumberFormat('es-CO', {
   style: 'currency',
   currency: 'COP',
   maximumFractionDigits: 0,
-}).format(value)
+}).format(Number(value))
 
-const date = (value) => value ? new Intl.DateTimeFormat('es-CO').format(new Date(value)) : '-'
+export const date = (value) => value ? new Intl.DateTimeFormat('es-CO').format(new Date(value)) : '-'
 
-const nested = (path) => (row) => path.split('.').reduce((value, key) => value?.[key], row) ?? '-'
+export const nested = (path) => (row) => path.split('.').reduce((value, key) => value?.[key], row) ?? '-'
+
+const source = (endpoint, labelKey, valueKey = 'id') => ({ endpoint, labelKey, valueKey })
 
 export const resources = [
   {
@@ -51,8 +52,8 @@ export const resources = [
       { key: 'active', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'name', label: 'Nombre', required: true },
-      { key: 'department', label: 'Departamento', required: true },
+      { key: 'name', label: 'Nombre', required: true, maxlength: 100 },
+      { key: 'department', label: 'Departamento', required: true, maxlength: 100 },
       { key: 'active', label: 'Estado', type: 'select', options: boolOptions, default: true },
     ],
   },
@@ -74,10 +75,10 @@ export const resources = [
       { key: 'active', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'identificationNumber', label: 'Documento', required: true },
-      { key: 'fullName', label: 'Nombre completo', required: true },
-      { key: 'phone', label: 'Telefono', nullable: true },
-      { key: 'email', label: 'Email', type: 'email', nullable: true },
+      { key: 'identificationNumber', label: 'Documento', required: true, maxlength: 30 },
+      { key: 'fullName', label: 'Nombre completo', required: true, maxlength: 120 },
+      { key: 'phone', label: 'Telefono', maxlength: 30, nullable: true },
+      { key: 'email', label: 'Email', type: 'email', maxlength: 120, nullable: true },
       { key: 'active', label: 'Estado', type: 'select', options: boolOptions, default: true },
     ],
   },
@@ -91,12 +92,6 @@ export const resources = [
     icon: Home,
     accent: 'blue',
     operations: { create: true, update: true, delete: true },
-    relatedActions: [
-      { label: 'Ver propietarios', method: 'GET', path: '/api/v1/properties/{propertyId}/owners' },
-      { label: 'Asignar propietario', method: 'POST', path: '/api/v1/properties/{propertyId}/owners' },
-      { label: 'Actualizar asignacion', method: 'PUT', path: '/api/v1/properties/{propertyId}/owners/{ownerId}' },
-      { label: 'Eliminar asignacion', method: 'DELETE', path: '/api/v1/properties/{propertyId}/owners/{ownerId}' },
-    ],
     columns: [
       { key: 'cadastralCode', label: 'Codigo' },
       { key: 'address', label: 'Direccion' },
@@ -106,12 +101,19 @@ export const resources = [
       { key: 'cadastralValue', label: 'Valor', value: (row) => money(row.cadastralValue), align: 'right' },
     ],
     fields: [
-      { key: 'cadastralCode', label: 'Codigo catastral', required: true },
-      { key: 'address', label: 'Direccion', required: true },
+      { key: 'cadastralCode', label: 'Codigo catastral', required: true, maxlength: 40 },
+      { key: 'address', label: 'Direccion', required: true, maxlength: 180 },
       { key: 'propertyUse', label: 'Uso', type: 'select', options: propertyUseOptions, required: true },
       { key: 'status', label: 'Estado', type: 'select', options: propertyStatusOptions, default: 'ACTIVE' },
-      { key: 'cadastralValue', label: 'Valor catastral', type: 'number', required: true },
-      { key: 'municipalityId', label: 'ID municipio', type: 'number', required: true, fromRow: (row) => row.municipality?.id ?? '' },
+      { key: 'cadastralValue', label: 'Valor catastral', type: 'number', min: 0.01, step: 0.01, required: true },
+      {
+        key: 'municipalityId',
+        label: 'Municipio',
+        type: 'select',
+        source: source('/api/v1/municipalities', (item) => `${item.name} - ${item.department}`),
+        required: true,
+        fromRow: (row) => row.municipality?.id ?? '',
+      },
     ],
   },
   {
@@ -124,7 +126,6 @@ export const resources = [
     icon: CalendarDays,
     accent: 'indigo',
     operations: { create: true, update: true, delete: true },
-    extraReads: [{ label: 'Vigencia activa', method: 'GET', path: '/api/v1/fiscal-years/active' }],
     columns: [
       { key: 'year', label: 'Anio' },
       { key: 'description', label: 'Descripcion' },
@@ -134,7 +135,7 @@ export const resources = [
     ],
     fields: [
       { key: 'year', label: 'Anio', type: 'number', required: true },
-      { key: 'description', label: 'Descripcion', nullable: true },
+      { key: 'description', label: 'Descripcion', type: 'textarea', nullable: true },
       { key: 'startDate', label: 'Fecha inicio', type: 'date', required: true },
       { key: 'endDate', label: 'Fecha fin', type: 'date', required: true },
       { key: 'active', label: 'Estado', type: 'select', options: boolOptions, default: true },
@@ -150,17 +151,22 @@ export const resources = [
     icon: Percent,
     accent: 'violet',
     operations: { create: true, update: true, delete: true },
-    extraReads: [{ label: 'Por vigencia', method: 'GET', path: '/api/v1/tax-rates/fiscal-year/{fiscalYearId}' }],
     columns: [
       { key: 'year', label: 'Anio' },
       { key: 'classification', label: 'Clasificacion' },
-      { key: 'ratePerThousand', label: 'Tarifa x mil' },
+      { key: 'ratePerThousand', label: 'Tarifa por mil' },
       { key: 'active', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'fiscalYearId', label: 'ID vigencia', type: 'number', required: true },
+      {
+        key: 'fiscalYearId',
+        label: 'Vigencia fiscal',
+        type: 'select',
+        source: source('/api/v1/fiscal-years', (item) => `${item.year}${item.active ? ' (activa)' : ''}`),
+        required: true,
+      },
       { key: 'classification', label: 'Clasificacion', type: 'select', options: classificationOptions, required: true },
-      { key: 'ratePerThousand', label: 'Tarifa por mil', type: 'number', required: true },
+      { key: 'ratePerThousand', label: 'Tarifa por mil', type: 'number', min: 0.01, step: 0.01, required: true },
       { key: 'active', label: 'Estado', type: 'select', options: boolOptions, default: true },
     ],
   },
@@ -174,20 +180,19 @@ export const resources = [
     icon: Tags,
     accent: 'emerald',
     operations: { create: true, update: true, delete: true },
-    extraReads: [{ label: 'Por clasificacion', method: 'GET', path: '/api/v1/tax-benefits/by-classification?classification=URBAN' }],
     columns: [
       { key: 'code', label: 'Codigo' },
       { key: 'name', label: 'Nombre' },
-      { key: 'discountPercentage', label: 'Descuento' },
+      { key: 'discountPercentage', label: 'Descuento', value: (row) => `${row.discountPercentage}%` },
       { key: 'applicableClassification', label: 'Clasificacion' },
       { key: 'active', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'code', label: 'Codigo', required: true },
-      { key: 'name', label: 'Nombre', required: true },
-      { key: 'description', label: 'Descripcion', nullable: true },
-      { key: 'discountPercentage', label: 'Porcentaje descuento', type: 'number', required: true },
-      { key: 'applicableClassification', label: 'Clasificacion', type: 'select', options: classificationOptions, nullable: true },
+      { key: 'code', label: 'Codigo', required: true, maxlength: 20 },
+      { key: 'name', label: 'Nombre', required: true, maxlength: 100 },
+      { key: 'description', label: 'Descripcion', type: 'textarea', nullable: true },
+      { key: 'discountPercentage', label: 'Porcentaje descuento', type: 'number', min: 0, max: 100, step: 0.01, required: true },
+      { key: 'applicableClassification', label: 'Clasificacion aplicable', type: 'select', options: classificationOptions, nullable: true },
       { key: 'active', label: 'Estado', type: 'select', options: boolOptions, default: true },
     ],
   },
@@ -208,9 +213,9 @@ export const resources = [
       { key: 'active', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'code', label: 'Codigo', required: true },
-      { key: 'name', label: 'Nombre', required: true },
-      { key: 'description', label: 'Descripcion', nullable: true },
+      { key: 'code', label: 'Codigo', required: true, maxlength: 20 },
+      { key: 'name', label: 'Nombre', required: true, maxlength: 100 },
+      { key: 'description', label: 'Descripcion', type: 'textarea', nullable: true },
       { key: 'active', label: 'Estado', type: 'select', options: boolOptions, default: true },
     ],
   },
@@ -224,11 +229,7 @@ export const resources = [
     icon: ReceiptText,
     accent: 'rose',
     operations: { create: true, update: false, delete: false },
-    relatedActions: [
-      { label: 'Ver pagos', method: 'GET', path: '/api/v1/liquidations/{id}/payments' },
-      { label: 'Registrar pago', method: 'POST', path: '/api/v1/liquidations/{id}/payments' },
-      { label: 'Generar paz y salvo', method: 'POST', path: '/api/v1/liquidations/{id}/clearance-certificates' },
-    ],
+    filters: [{ key: 'propertyId', label: 'Predio', type: 'select', source: source('/api/v1/properties', (item) => item.cadastralCode) }],
     columns: [
       { key: 'cadastralCode', label: 'Predio' },
       { key: 'fiscalYear', label: 'Anio' },
@@ -237,10 +238,16 @@ export const resources = [
       { key: 'status', label: 'Estado', type: 'status' },
     ],
     fields: [
-      { key: 'propertyId', label: 'ID predio', type: 'number', required: true },
+      {
+        key: 'propertyId',
+        label: 'Predio',
+        type: 'select',
+        source: source('/api/v1/properties', (item) => `${item.cadastralCode} - ${item.address}`),
+        required: true,
+      },
       { key: 'fiscalYear', label: 'Anio fiscal', type: 'number', required: true },
-      { key: 'discountAmount', label: 'Descuento', type: 'number', default: 0, nullable: true },
-      { key: 'interestAmount', label: 'Interes', type: 'number', default: 0, nullable: true },
+      { key: 'discountAmount', label: 'Descuento', type: 'number', min: 0, step: 0.01, default: 0, nullable: true },
+      { key: 'interestAmount', label: 'Interes', type: 'number', min: 0, step: 0.01, default: 0, nullable: true },
       { key: 'dueDate', label: 'Fecha vencimiento', type: 'date', nullable: true },
     ],
   },
@@ -254,7 +261,6 @@ export const resources = [
     icon: FileCheck2,
     accent: 'teal',
     operations: { create: false, update: false, delete: false },
-    relatedActions: [{ label: 'Generar desde liquidacion', method: 'POST', path: '/api/v1/liquidations/{id}/clearance-certificates' }],
     columns: [
       { key: 'certificateNumber', label: 'Certificado' },
       { key: 'cadastralCode', label: 'Predio' },
@@ -265,34 +271,21 @@ export const resources = [
   },
 ]
 
-export const authResource = {
-  key: 'auth',
-  path: 'auth',
-  title: 'Autenticacion',
-  eyebrow: 'Seguridad',
-  endpoint: '/api/v1/auth',
-  icon: ShieldCheck,
-  accent: 'slate',
-  operations: { create: false, update: false, delete: false },
-  relatedActions: [
-    { label: 'Iniciar sesion', method: 'POST', path: '/api/v1/auth/login' },
-    { label: 'Usuario actual', method: 'GET', path: '/api/v1/auth/me' },
-  ],
-  fields: [
-    { key: 'username', label: 'Usuario', required: true },
-    { key: 'password', label: 'Contrasena', type: 'password', required: true },
-  ],
-}
-
 export const paymentFormFields = [
-  { key: 'amount', label: 'Monto', type: 'number', required: true },
+  { key: 'amount', label: 'Monto', type: 'number', min: 0.01, step: 0.01, required: true },
   { key: 'paymentMethod', label: 'Metodo de pago', type: 'select', options: paymentMethodOptions, required: true },
-  { key: 'reference', label: 'Referencia', nullable: true },
+  { key: 'reference', label: 'Referencia', maxlength: 80, nullable: true },
 ]
 
 export const propertyOwnerFields = [
-  { key: 'ownerId', label: 'ID propietario', type: 'number', required: true },
-  { key: 'ownershipPercentage', label: 'Porcentaje de propiedad', type: 'number', required: true },
+  {
+    key: 'ownerId',
+    label: 'Propietario',
+    type: 'select',
+    source: source('/api/v1/owners', (item) => `${item.identificationNumber} - ${item.fullName}`),
+    required: true,
+  },
+  { key: 'ownershipPercentage', label: 'Porcentaje de propiedad', type: 'number', min: 0.01, max: 100, step: 0.01, required: true },
 ]
 
 export const navGroups = [
@@ -311,15 +304,11 @@ export const navGroups = [
     label: 'Configuracion',
     items: resources.filter((item) => ['fiscal-years', 'tax-rates', 'tax-benefits', 'charge-types'].includes(item.key)),
   },
-  {
-    label: 'Seguridad',
-    items: [authResource],
-  },
 ]
 
-export const dashboardStats = [
-  { label: 'Recaudo del mes', value: '$428.6M', detail: 'desde pagos registrados', icon: WalletCards, tone: 'sky' },
-  { label: 'Predios activos', value: '18,240', detail: 'catastro municipal', icon: Home, tone: 'cyan' },
-  { label: 'Liquidaciones', value: '2,864', detail: 'vigencia actual', icon: ReceiptText, tone: 'blue' },
-  { label: 'Paz y salvo', value: '746', detail: 'certificados emitidos', icon: BadgeCheck, tone: 'emerald' },
+export const dashboardFallbackStats = [
+  { label: 'Total liquidado', value: '-', detail: 'liquidaciones registradas', icon: ReceiptText, tone: 'sky' },
+  { label: 'Total recaudado', value: '-', detail: 'pagos aplicados', icon: WalletCards, tone: 'cyan' },
+  { label: 'Cartera pendiente', value: '-', detail: 'saldo por recaudar', icon: Home, tone: 'blue' },
+  { label: 'Liquidaciones activas', value: '-', detail: 'por estado', icon: BadgeCheck, tone: 'emerald' },
 ]

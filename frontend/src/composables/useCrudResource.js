@@ -9,7 +9,7 @@ function emptyForm(fields) {
 }
 
 function normalizeValue(value, field) {
-  if (field.type === 'number' && value !== '') {
+  if ((field.type === 'number' || field.source) && value !== '') {
     return Number(value)
   }
   if (field.type === 'checkbox') {
@@ -52,11 +52,17 @@ export function useCrudResource(resource) {
     })
   }
 
-  async function load() {
+  async function load(params = {}) {
     loading.value = true
     error.value = ''
     try {
-      rows.value = await api.get(resource.endpoint)
+      const query = new URLSearchParams()
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== '' && value != null) {
+          query.set(key, value)
+        }
+      })
+      rows.value = await api.get(`${resource.endpoint}${query.toString() ? `?${query}` : ''}`)
     } catch (requestError) {
       error.value = requestError.message
     } finally {

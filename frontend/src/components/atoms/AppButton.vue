@@ -8,6 +8,11 @@ defineProps({
     type: Object,
     default: null,
   },
+  disabled: Boolean,
+  type: {
+    type: String,
+    default: 'button',
+  },
 })
 
 const variants = {
@@ -18,7 +23,7 @@ const variants = {
 </script>
 
 <template>
-  <button type="button" class="btn" :class="variants[variant]">
+  <button :type="type" class="btn" :class="variants[variant]" :disabled="disabled">
     <component :is="icon" v-if="icon" class="h-4 w-4" />
     <slot />
   </button>
