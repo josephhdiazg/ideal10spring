@@ -33,10 +33,7 @@ public class PropertyAssessmentController {
 
     @GetMapping
     public List<PropertyAssessmentResponse> findAll(@RequestParam(required = false) Long propertyId) {
-        if (propertyId != null) {
-            return assessmentService.findByProperty(propertyId);
-        }
-        return assessmentService.findAll();
+        return assessmentService.findAll(propertyId);
     }
 
     @GetMapping("/{id}")
