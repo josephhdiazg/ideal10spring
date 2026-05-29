@@ -20,8 +20,13 @@ async function submitLogin() {
   loading.value = true
   error.value = ''
   try {
-    await login(credentials)
-    await router.push(route.query.redirect || { name: 'dashboard' })
+    const response = await login(credentials)
+    const roles = response.roles || []
+    if (roles.includes('ROLE_CONTRIBUYENTE')) {
+      await router.push({ name: 'contribuyente' })
+    } else {
+      await router.push(route.query.redirect || { name: 'dashboard' })
+    }
   } catch (requestError) {
     error.value = requestError.status === 401
       ? 'Las credenciales no son validas.'
