@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 export class ApiError extends Error {
   constructor(message, status, details) {
@@ -41,6 +41,9 @@ export async function apiRequest(path, options = {}) {
   const payload = await parseResponse(response)
 
   if (!response.ok) {
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('ideal10:unauthorized'))
+    }
     const message = payload?.message || payload?.error || `Request failed with status ${response.status}`
     throw new ApiError(message, response.status, payload)
   }

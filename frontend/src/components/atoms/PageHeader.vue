@@ -19,7 +19,13 @@ defineProps({
     type: Boolean,
     default: true,
   },
+  showAction: {
+    type: Boolean,
+    default: true,
+  },
 })
+
+defineEmits(['action'])
 </script>
 
 <template>
@@ -33,7 +39,7 @@ defineProps({
         <Search class="h-4 w-4 text-slate-400" />
         <input class="search-input" placeholder="Buscar" type="search" />
       </div>
-      <AppButton :icon="Plus">{{ actionLabel }}</AppButton>
+      <AppButton v-if="showAction" :icon="Plus" @click="$emit('action')">{{ actionLabel }}</AppButton>
     </div>
   </div>
 </template>

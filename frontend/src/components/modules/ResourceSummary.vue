@@ -17,8 +17,8 @@ defineProps({
         <component :is="resource.icon" class="h-5 w-5" />
       </span>
       <div class="min-w-0">
-        <p class="truncate text-sm font-semibold text-slate-950">{{ resource.endpoint }}</p>
-        <p class="text-sm text-slate-500">{{ resource.actions.length }} operaciones</p>
+        <p class="truncate text-sm font-semibold text-slate-950">{{ resource.title }}</p>
+        <p class="text-sm text-slate-500">{{ resource.endpoint }}</p>
       </div>
     </div>
     <div class="mt-4 flex flex-wrap gap-2">

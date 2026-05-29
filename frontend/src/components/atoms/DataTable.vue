@@ -12,9 +12,13 @@ defineProps({
   },
   canUpdate: Boolean,
   canDelete: Boolean,
+  selectedId: {
+    type: [String, Number],
+    default: null,
+  },
 })
 
-defineEmits(['edit', 'delete'])
+defineEmits(['edit', 'delete', 'select'])
 
 function cellValue(row, column) {
   if (column.value) {
@@ -40,7 +44,11 @@ function isPositiveStatus(value) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
+        <tr
+          v-for="(row, rowIndex) in rows"
+          :key="row.id ?? rowIndex"
+          :class="selectedId === row.id ? 'bg-sky-50' : ''"
+        >
           <td
             v-for="column in columns"
             :key="`${rowIndex}-${column.key}`"
@@ -56,9 +64,9 @@ function isPositiveStatus(value) {
             </span>
           </td>
           <td class="text-right">
+            <button class="table-link" type="button" @click="$emit('select', row)">Detalles</button>
             <button v-if="canUpdate" class="table-link" type="button" @click="$emit('edit', row)">Editar</button>
             <button v-if="canDelete" class="table-link danger" type="button" @click="$emit('delete', row)">Eliminar</button>
-            <span v-if="!canUpdate && !canDelete" class="text-sm text-slate-400">Solo lectura</span>
           </td>
         </tr>
       </tbody>

@@ -26,7 +26,7 @@ defineEmits(['save', 'cancel', 'update:field'])
   <form class="grid gap-4 md:grid-cols-2" @submit.prevent="$emit('save')">
     <AppInput
       v-for="field in fields"
-      :key="field"
+      :key="field.key"
       :field="field"
       :model-value="form[field.key]"
       @update:model-value="$emit('update:field', field.key, $event)"
