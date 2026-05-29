@@ -1,6 +1,6 @@
 package com.ideal_10.ideal10spring.dtos;
 
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,7 +18,7 @@ public record PropertyAssessmentResponse(
         BigDecimal interestAmount,
         BigDecimal totalAmount,
         BigDecimal balance,
-        EstadoLiquidacion status,
+        AssessmentStatus status,
         List<AssessmentDetailResponse> details
 ) {
 }

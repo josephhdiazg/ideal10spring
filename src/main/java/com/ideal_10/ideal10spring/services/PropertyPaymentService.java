@@ -4,8 +4,8 @@ import com.ideal_10.ideal10spring.dtos.PropertyPaymentRequest;
 import com.ideal_10.ideal10spring.dtos.PropertyPaymentResponse;
 import com.ideal_10.ideal10spring.entities.PropertyAssessment;
 import com.ideal_10.ideal10spring.entities.PropertyPayment;
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
-import com.ideal_10.ideal10spring.enums.EstadoPago;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
+import com.ideal_10.ideal10spring.enums.PaymentStatus;
 import com.ideal_10.ideal10spring.repositories.PropertyPaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,11 +32,11 @@ public class PropertyPaymentService {
     @Transactional
     public PropertyPaymentResponse registerPayment(Long assessmentId, PropertyPaymentRequest request) {
         PropertyAssessment assessment = assessmentService.getEntity(assessmentId);
-        if (assessment.getStatus() == EstadoLiquidacion.PAGADA) {
-            throw new IllegalArgumentException("Liquidation is already paid");
+        if (assessment.getStatus() == AssessmentStatus.PAID) {
+            throw new IllegalArgumentException("Assessment is already paid");
         }
-        if (assessment.getStatus() == EstadoLiquidacion.ANULADA) {
-            throw new IllegalArgumentException("Cannot register payment for cancelled liquidation");
+        if (assessment.getStatus() == AssessmentStatus.CANCELLED) {
+            throw new IllegalArgumentException("Cannot register payment for cancelled assessment");
         }
         if (request.amount().compareTo(assessment.getBalance()) > 0) {
             throw new IllegalArgumentException("Payment amount cannot exceed pending balance");
@@ -48,7 +48,7 @@ public class PropertyPaymentService {
         payment.setPaymentMethod(request.paymentMethod());
         payment.setReference(request.reference());
         payment.setPaymentDate(LocalDateTime.now());
-        payment.setStatus(EstadoPago.REGISTRADO);
+        payment.setStatus(PaymentStatus.REGISTERED);
         PropertyPayment saved = paymentRepository.save(payment);
 
         assessmentService.updateAfterPayment(assessment, request.amount());

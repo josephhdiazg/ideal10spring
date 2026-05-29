@@ -1,6 +1,6 @@
 package com.ideal_10.ideal10spring.entities;
 
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -84,5 +84,5 @@ public class PropertyAssessment {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private EstadoLiquidacion status = EstadoLiquidacion.PENDIENTE;
+    private AssessmentStatus status = AssessmentStatus.PENDING;
 }

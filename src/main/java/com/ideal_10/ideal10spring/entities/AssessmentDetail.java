@@ -1,6 +1,6 @@
 package com.ideal_10.ideal10spring.entities;
 
-import com.ideal_10.ideal10spring.enums.TipoMovimientoLiquidacion;
+import com.ideal_10.ideal10spring.enums.AssessmentMovementType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,7 +39,7 @@ public class AssessmentDetail {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private TipoMovimientoLiquidacion movementType;
+    private AssessmentMovementType movementType;
 
     @NotBlank
     @Size(max = 120)
