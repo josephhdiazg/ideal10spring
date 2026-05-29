@@ -1,14 +1,14 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { AlertCircle, ClipboardList, FileCheck2, Plus, RefreshCw, Save, Trash2, UsersRound, WalletCards } from '@lucide/vue'
+import { AlertCircle, ClipboardList, FileCheck2, RefreshCw, Save, Trash2, UsersRound, WalletCards } from '@lucide/vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppCard from '../components/atoms/AppCard.vue'
 import AppInput from '../components/atoms/AppInput.vue'
+import CrudModal from '../components/atoms/CrudModal.vue'
 import DataTable from '../components/atoms/DataTable.vue'
 import PageHeader from '../components/atoms/PageHeader.vue'
 import StatusBadge from '../components/atoms/StatusBadge.vue'
 import CrudFormPreview from '../components/modules/CrudFormPreview.vue'
-import ResourceSummary from '../components/modules/ResourceSummary.vue'
 import { api } from '../api/client'
 import { useCrudResource } from '../composables/useCrudResource'
 import { date, money, paymentFormFields, propertyOwnerFields } from '../data/resources'
@@ -31,8 +31,9 @@ const payments = ref([])
 const paymentForm = reactive({})
 const ownerForm = reactive({})
 const editingOwner = ref(null)
+const formOpen = ref(false)
+const detailsOpen = ref(false)
 
-const actionLabel = computed(() => `Nuevo ${props.resource.singular}`)
 const {
   rows,
   loading,
@@ -54,17 +55,20 @@ const displayFields = computed(() => withReferenceOptions(props.resource.fields)
 const filterFields = computed(() => withReferenceOptions(props.resource.filters || []))
 const ownerFields = computed(() => withReferenceOptions(propertyOwnerFields))
 const paymentFields = computed(() => paymentFormFields)
-const selectedDetails = computed(() => selected.value ? Object.entries(selected.value).filter(([key]) => key !== 'details') : [])
+const selectedDetails = computed(() =>
+  selected.value ? Object.entries(selected.value).filter(([key]) => key !== 'details') : []
+)
+const formTitle = computed(() =>
+  editing.value ? `Editar ${props.resource.singular}` : `Nuevo ${props.resource.singular}`
+)
+const formSubtitle = computed(() =>
+  editing.value ? `Registro #${editing.value.id}` : 'Complete los campos requeridos.'
+)
 
 function withReferenceOptions(fields) {
   return fields.map((field) => {
-    if (!field.source) {
-      return field
-    }
-    return {
-      ...field,
-      options: references[field.source.endpoint] || [],
-    }
+    if (!field.source) return field
+    return { ...field, options: references[field.source.endpoint] || [] }
   })
 }
 
@@ -74,13 +78,15 @@ function labelFor(item, labelKey) {
 
 async function loadReferences(fields = []) {
   const sources = fields.map((field) => field.source).filter(Boolean)
-  await Promise.all([...new Map(sources.map((item) => [item.endpoint, item])).values()].map(async (source) => {
-    const items = await api.get(source.endpoint)
-    references[source.endpoint] = items.map((item) => ({
-      label: labelFor(item, source.labelKey),
-      value: item[source.valueKey],
-    }))
-  }))
+  await Promise.all(
+    [...new Map(sources.map((item) => [item.endpoint, item])).values()].map(async (source) => {
+      const items = await api.get(source.endpoint)
+      references[source.endpoint] = items.map((item) => ({
+        label: labelFor(item, source.labelKey),
+        value: item[source.valueKey],
+      }))
+    })
+  )
 }
 
 function resetActionForms() {
@@ -112,14 +118,32 @@ function updateOwnerField(key, value) {
   ownerForm[key] = value
 }
 
+function openCreateForm() {
+  resetForm()
+  formOpen.value = true
+}
+
+function closeForm() {
+  resetForm()
+  formOpen.value = false
+}
+
 function editRecord(row) {
-  selected.value = row
   fillForm(row)
+  formOpen.value = true
+}
+
+async function saveAndClose() {
+  await save()
+  if (!error.value) {
+    formOpen.value = false
+  }
 }
 
 async function selectRecord(row) {
   selected.value = row
   resetActionForms()
+  detailsOpen.value = true
   if (props.resource.key === 'properties') {
     await loadPropertyOwners()
   }
@@ -241,6 +265,8 @@ async function generateCertificate() {
 
 watch(() => props.resource.key, async () => {
   selected.value = null
+  formOpen.value = false
+  detailsOpen.value = false
   Object.keys(filters).forEach((key) => delete filters[key])
   resetActionForms()
   props.resource.filters?.forEach((field) => { filters[field.key] = '' })
@@ -263,11 +289,11 @@ onMounted(async () => {
 <template>
   <section class="page-section">
     <PageHeader
-      :action-label="actionLabel"
+      :action-label="`Nuevo ${resource.singular}`"
       :eyebrow="resource.eyebrow"
       :show-action="canCreate"
       :title="resource.title"
-      @action="resetForm"
+      @action="openCreateForm"
     />
 
     <div v-if="error" class="mb-5 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700" role="alert">
@@ -291,87 +317,107 @@ onMounted(async () => {
       </form>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-      <AppCard>
-        <div class="card-header">
-          <div>
-            <h2 class="section-title">Registros</h2>
-            <p class="muted-text">{{ rows.length }} registros disponibles</p>
-          </div>
-          <div class="flex gap-2">
-            <AppButton :disabled="loading" :icon="RefreshCw" variant="secondary" @click="refreshResource">Refrescar</AppButton>
-            <AppButton v-if="canCreate" :icon="Plus" @click="resetForm">Crear</AppButton>
-          </div>
+    <AppCard>
+      <div class="card-header">
+        <div>
+          <h2 class="section-title">Registros</h2>
+          <p class="muted-text">{{ rows.length }} registros disponibles</p>
         </div>
-        <div v-if="loading" class="py-12 text-center text-sm text-slate-500">Cargando registros...</div>
-        <DataTable
-          v-else
-          :can-delete="canDelete"
-          :can-update="canUpdate"
-          :columns="resource.columns"
-          :rows="rows"
-          :selected-id="selected?.id"
-          @delete="remove"
-          @edit="editRecord"
-          @select="selectRecord"
-        />
-      </AppCard>
+        <div class="flex gap-2">
+          <AppButton :disabled="loading" :icon="RefreshCw" variant="secondary" @click="refreshResource">
+            Refrescar
+          </AppButton>
+          <AppButton v-if="canCreate" @click="openCreateForm">
+            Nuevo {{ resource.singular }}
+          </AppButton>
+        </div>
+      </div>
+      <div v-if="loading" class="py-12 text-center text-sm text-slate-500">Cargando registros...</div>
+      <DataTable
+        v-else
+        :can-delete="canDelete"
+        :can-update="canUpdate"
+        :columns="resource.columns"
+        :rows="rows"
+        :selected-id="selected?.id"
+        @delete="remove"
+        @edit="editRecord"
+        @select="selectRecord"
+      />
+    </AppCard>
 
-      <div class="space-y-6">
-        <ResourceSummary :resource="resource" />
+    <!-- Create / Edit modal -->
+    <CrudModal
+      :open="formOpen"
+      :title="formTitle"
+      :subtitle="formSubtitle"
+      @close="closeForm"
+    >
+      <div v-if="error" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <div class="flex gap-2">
+          <AlertCircle class="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{{ error }}</span>
+        </div>
+      </div>
+      <CrudFormPreview
+        :editing="editing"
+        :fields="displayFields"
+        :form="form"
+        :saving="saving"
+        @cancel="closeForm"
+        @save="saveAndClose"
+        @update:field="updateField"
+      />
+    </CrudModal>
 
-        <AppCard v-if="canCreate || canUpdate">
-          <h2 class="section-title">{{ editing ? `Editar ${resource.singular}` : `Crear ${resource.singular}` }}</h2>
-          <p class="muted-text">{{ editing ? `Registro #${editing.id}` : 'Complete los campos requeridos.' }}</p>
-          <div class="mt-4">
-            <CrudFormPreview
-              :editing="editing"
-              :fields="displayFields"
-              :form="form"
-              :saving="saving"
-              @cancel="resetForm"
-              @save="save"
-              @update:field="updateField"
-            />
+    <!-- Record details modal -->
+    <CrudModal
+      :open="detailsOpen"
+      :title="`Detalle — ${resource.singular}`"
+      :subtitle="selected ? `Registro #${selected.id}` : ''"
+      max-width="max-w-3xl"
+      @close="detailsOpen = false"
+    >
+      <div v-if="actionError" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{{ actionError }}</div>
+      <div v-if="actionSuccess" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{{ actionSuccess }}</div>
+
+      <!-- Raw key-value details -->
+      <div v-if="selected">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="icon-tile bg-sky-100 text-sky-700">
+            <ClipboardList class="h-5 w-5" />
+          </span>
+          <h3 class="section-title">Campos del registro</h3>
+        </div>
+        <dl class="grid gap-2 sm:grid-cols-2 mb-6">
+          <div v-for="[key, value] in selectedDetails" :key="key" class="rounded-lg bg-sky-50 p-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ key }}</dt>
+            <dd class="mt-1 break-words text-sm font-medium text-slate-800">
+              {{ typeof value === 'object' && value !== null ? JSON.stringify(value) : value ?? '-' }}
+            </dd>
           </div>
-        </AppCard>
+        </dl>
+      </div>
 
-        <AppCard v-if="selected">
-          <div class="flex items-center gap-3">
-            <span class="icon-tile bg-sky-100 text-sky-700">
-              <ClipboardList class="h-5 w-5" />
-            </span>
-            <div>
-              <h2 class="section-title">Detalle del registro</h2>
-              <p class="muted-text">Seleccion #{{ selected.id }}</p>
-            </div>
-          </div>
-          <dl class="mt-4 grid gap-3 text-sm">
-            <div v-for="[key, value] in selectedDetails" :key="key" class="rounded-lg bg-sky-50 p-3">
-              <dt class="font-semibold text-slate-700">{{ key }}</dt>
-              <dd class="mt-1 break-words text-slate-600">{{ typeof value === 'object' && value !== null ? JSON.stringify(value) : value ?? '-' }}</dd>
-            </div>
-          </dl>
-        </AppCard>
-
-        <AppCard v-if="resource.key === 'properties' && selected">
-          <div class="card-header">
+      <!-- Property owners panel -->
+      <template v-if="resource.key === 'properties' && selected">
+        <div class="border-t border-sky-100 pt-5">
+          <div class="card-header mb-4">
             <div class="flex items-center gap-3">
               <span class="icon-tile bg-cyan-100 text-cyan-700">
                 <UsersRound class="h-5 w-5" />
               </span>
               <div>
-                <h2 class="section-title">Propietarios del predio</h2>
+                <h3 class="section-title">Propietarios del predio</h3>
                 <p class="muted-text">{{ selected.cadastralCode }}</p>
               </div>
             </div>
-            <AppButton :disabled="relationLoading" :icon="RefreshCw" variant="secondary" @click="loadPropertyOwners">Actualizar</AppButton>
+            <AppButton :disabled="relationLoading" :icon="RefreshCw" variant="secondary" @click="loadPropertyOwners">
+              Actualizar
+            </AppButton>
           </div>
 
-          <div v-if="actionError" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{{ actionError }}</div>
-          <div v-if="actionSuccess" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{{ actionSuccess }}</div>
-
-          <form class="grid gap-4" @submit.prevent="saveOwnerAssignment">
+          <form class="grid gap-4 sm:grid-cols-2 mb-4" @submit.prevent="saveOwnerAssignment">
             <AppInput
               v-for="field in ownerFields"
               :key="field.key"
@@ -379,7 +425,7 @@ onMounted(async () => {
               :model-value="ownerForm[field.key]"
               @update:model-value="updateOwnerField(field.key, $event)"
             />
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2 sm:col-span-2">
               <button class="btn btn-primary" :disabled="relationLoading" type="submit">
                 <Save class="h-4 w-4" />
                 {{ editingOwner ? 'Actualizar asignacion' : 'Asignar propietario' }}
@@ -388,8 +434,12 @@ onMounted(async () => {
             </div>
           </form>
 
-          <div class="mt-5 space-y-3">
-            <div v-for="assignment in propertyOwners" :key="assignment.id" class="rounded-lg border border-sky-100 p-3">
+          <div class="space-y-3">
+            <div
+              v-for="assignment in propertyOwners"
+              :key="assignment.id"
+              class="rounded-lg border border-sky-100 p-3"
+            >
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="font-semibold text-slate-900">{{ assignment.owner.fullName }}</p>
@@ -406,26 +456,26 @@ onMounted(async () => {
             </div>
             <p v-if="propertyOwners.length === 0" class="text-sm text-slate-500">No hay propietarios asignados.</p>
           </div>
-        </AppCard>
+        </div>
+      </template>
 
-        <AppCard v-if="resource.key === 'liquidations' && selected">
-          <div class="card-header">
+      <!-- Liquidation payments panel -->
+      <template v-if="resource.key === 'liquidations' && selected">
+        <div class="border-t border-sky-100 pt-5">
+          <div class="card-header mb-4">
             <div class="flex items-center gap-3">
               <span class="icon-tile bg-blue-100 text-blue-700">
                 <WalletCards class="h-5 w-5" />
               </span>
               <div>
-                <h2 class="section-title">Pagos y certificado</h2>
-                <p class="muted-text">{{ selected.cadastralCode }} · saldo {{ money(selected.balance) }}</p>
+                <h3 class="section-title">Pagos</h3>
+                <p class="muted-text">Saldo pendiente: {{ money(selected.balance) }}</p>
               </div>
             </div>
             <StatusBadge :label="String(selected.status)" tone="sky" />
           </div>
 
-          <div v-if="actionError" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{{ actionError }}</div>
-          <div v-if="actionSuccess" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{{ actionSuccess }}</div>
-
-          <form class="grid gap-4" @submit.prevent="registerPayment">
+          <form class="grid gap-4 sm:grid-cols-2 mb-4" @submit.prevent="registerPayment">
             <AppInput
               v-for="field in paymentFields"
               :key="field.key"
@@ -433,14 +483,20 @@ onMounted(async () => {
               :model-value="paymentForm[field.key]"
               @update:model-value="updatePaymentField(field.key, $event)"
             />
-            <button class="btn btn-primary" :disabled="relationLoading" type="submit">
-              <Save class="h-4 w-4" />
-              Registrar pago
-            </button>
+            <div class="sm:col-span-2">
+              <button class="btn btn-primary" :disabled="relationLoading" type="submit">
+                <Save class="h-4 w-4" />
+                Registrar pago
+              </button>
+            </div>
           </form>
 
-          <div class="mt-5 space-y-3">
-            <div v-for="payment in payments" :key="payment.id" class="rounded-lg border border-sky-100 p-3">
+          <div class="space-y-3 mb-4">
+            <div
+              v-for="payment in payments"
+              :key="payment.id"
+              class="rounded-lg border border-sky-100 p-3"
+            >
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="font-semibold text-slate-900">{{ money(payment.amount) }}</p>
@@ -452,12 +508,12 @@ onMounted(async () => {
             <p v-if="payments.length === 0" class="text-sm text-slate-500">No hay pagos registrados.</p>
           </div>
 
-          <button class="btn btn-secondary mt-5 w-full" :disabled="relationLoading" type="button" @click="generateCertificate">
+          <button class="btn btn-secondary w-full" :disabled="relationLoading" type="button" @click="generateCertificate">
             <FileCheck2 class="h-4 w-4" />
             Generar paz y salvo
           </button>
-        </AppCard>
-      </div>
-    </div>
+        </div>
+      </template>
+    </CrudModal>
   </section>
 </template>
