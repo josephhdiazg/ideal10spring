@@ -1,10 +1,10 @@
 package com.ideal_10.ideal10spring.services;
 
-import com.ideal_10.ideal10spring.dtos.DashboardPredialResponse;
+import com.ideal_10.ideal10spring.dtos.PropertyDashboardResponse;
 import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
 import com.ideal_10.ideal10spring.enums.EstadoPago;
-import com.ideal_10.ideal10spring.repositories.LiquidacionPredialRepository;
-import com.ideal_10.ideal10spring.repositories.PagoPredialRepository;
+import com.ideal_10.ideal10spring.repositories.PropertyAssessmentRepository;
+import com.ideal_10.ideal10spring.repositories.PropertyPaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,19 +18,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private final LiquidacionPredialRepository liquidacionRepository;
-    private final PagoPredialRepository pagoRepository;
+    private final PropertyAssessmentRepository assessmentRepository;
+    private final PropertyPaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
-    public DashboardPredialResponse getPredialMetrics() {
+    public PropertyDashboardResponse getPropertyTaxMetrics() {
         Map<String, Long> liquidationsByStatus = Arrays.stream(EstadoLiquidacion.values())
-                .collect(Collectors.toMap(Enum::name, liquidacionRepository::countByStatus));
+                .collect(Collectors.toMap(Enum::name, assessmentRepository::countByStatus));
 
-        return new DashboardPredialResponse(
+        return new PropertyDashboardResponse(
                 liquidationsByStatus,
-                liquidacionRepository.sumTotalAmount(),
-                pagoRepository.sumAmountByStatus(EstadoPago.REGISTRADO),
-                liquidacionRepository.sumBalanceByStatuses(List.of(
+                assessmentRepository.sumTotalAmount(),
+                paymentRepository.sumAmountByStatus(EstadoPago.REGISTRADO),
+                assessmentRepository.sumBalanceByStatuses(List.of(
                         EstadoLiquidacion.PENDIENTE,
                         EstadoLiquidacion.PARCIAL,
                         EstadoLiquidacion.VENCIDA

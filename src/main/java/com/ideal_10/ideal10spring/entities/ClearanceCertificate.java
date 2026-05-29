@@ -23,8 +23,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "certificados_paz_salvo")
-public class CertificadoPazSalvo {
+@Table(name = "clearance_certificates")
+public class ClearanceCertificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,8 +32,8 @@ public class CertificadoPazSalvo {
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "liquidacion_id", nullable = false, unique = true)
-    private LiquidacionPredial liquidacion;
+    @JoinColumn(name = "assessment_id", nullable = false, unique = true)
+    private PropertyAssessment assessment;
 
     @NotBlank
     @Size(max = 40)

@@ -4,9 +4,9 @@ import com.ideal_10.ideal10spring.enums.EstadoCertificado;
 
 import java.time.LocalDateTime;
 
-public record CertificadoPazSalvoResponse(
+public record ClearanceCertificateResponse(
         Long id,
-        Long liquidacionId,
+        Long assessmentId,
         Long propertyId,
         String cadastralCode,
         String certificateNumber,
