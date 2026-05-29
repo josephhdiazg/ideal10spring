@@ -42,6 +42,14 @@ public class PropertyAssessmentService {
     }
 
     @Transactional(readOnly = true)
+    public List<PropertyAssessmentResponse> findAll(Long propertyId) {
+        if (propertyId != null) {
+            return findByProperty(propertyId);
+        }
+        return findAll();
+    }
+
+    @Transactional(readOnly = true)
     public PropertyAssessmentResponse findById(Long id) {
         return toResponse(getEntity(id));
     }
