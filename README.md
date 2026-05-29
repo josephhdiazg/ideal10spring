@@ -1,29 +1,33 @@
 <div align="center">
 
-# IDEAL10 — Property Tax Management System
+# IDEAL10 - Property Tax Management System
 
-**Backend:** Spring Boot 4 · Java 21 · PostgreSQL &nbsp;|&nbsp; **Frontend:** Vue 3 · Vite · Tailwind CSS · Flowbite &nbsp;|&nbsp; **Auth:** JWT · Spring Security
+Spring Boot API and Vue frontend for managing municipal property-tax data: properties, owners, liquidations, payments, fiscal configuration, clearance certificates, and dashboard metrics.
 
-[![CI – Tests](https://github.com/josephhdiazg/ideal10spring/actions/workflows/test.yml/badge.svg)](https://github.com/josephhdiazg/ideal10spring/actions/workflows/test.yml)
-[![CI – Docker](https://github.com/josephhdiazg/ideal10spring/actions/workflows/deploy.yml/badge.svg)](https://github.com/josephhdiazg/ideal10spring/actions/workflows/deploy.yml)
+**Backend:** Spring Boot 4.0.6, Java 21, PostgreSQL/H2, Spring Security, JWT  
+**Frontend:** Vue 3, Vite 7, Tailwind CSS, Flowbite  
+**Build/ops:** Maven Wrapper, Docker, Docker Compose, GitHub Actions
+
+[![CI - Tests](https://github.com/josephhdiazg/ideal10spring/actions/workflows/test.yml/badge.svg)](https://github.com/josephhdiazg/ideal10spring/actions/workflows/test.yml)
+[![CI - Docker](https://github.com/josephhdiazg/ideal10spring/actions/workflows/deploy.yml/badge.svg)](https://github.com/josephhdiazg/ideal10spring/actions/workflows/deploy.yml)
 
 </div>
 
 ---
 
-## Table of Contents
+## Contents
 
 1. [Team](#team)
-2. [Tech Stack](#tech-stack)
-3. [Prerequisites](#prerequisites)
-4. [Running the Application](#running-the-application)
-   - [Docker Compose (recommended)](#docker-compose-recommended)
-   - [Local Setup (without Docker)](#local-setup-without-docker)
-5. [Environment Variables](#environment-variables)
-6. [Test Users](#test-users)
-7. [Main Endpoints](#main-endpoints)
-8. [Interactive Docs — Swagger UI](#interactive-docs--swagger-ui)
-9. [CI / CD](#ci--cd)
+2. [Repository](#repository)
+3. [Tech Stack](#tech-stack)
+4. [Prerequisites](#prerequisites)
+5. [Run With Docker Compose](#run-with-docker-compose)
+6. [Run Locally](#run-locally)
+7. [Configuration](#configuration)
+8. [Seeded Development Users](#seeded-development-users)
+9. [API Surface](#api-surface)
+10. [Swagger UI](#swagger-ui)
+11. [CI/CD](#cicd)
 
 ---
 
@@ -31,91 +35,122 @@
 
 | Name | Role |
 |---|---|
-| Juan González | Developer |
+| Juan Gonzalez | Developer |
 | Michael Arias | Developer |
-| Joseph Díaz | Developer |
-| Omar Gutiérrez | Developer |
+| Joseph Diaz | Developer |
+| Omar Gutierrez | Developer |
+
+---
+
+## Repository
+
+Clone the public repository from GitHub:
+
+```bash
+git clone https://github.com/josephhdiazg/ideal10spring.git
+cd ideal10spring
+```
+
+The repository includes GitHub Actions workflows for tests and Docker image publication. Pull requests and issues should target the GitHub repository.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology | Version |
+| Layer | Technology | Version/source |
 |---|---|---|
-| Backend framework | Spring Boot | 4.0.6 |
+| Backend framework | Spring Boot | 4.0.6 (`pom.xml`) |
 | Language | Java | 21 |
-| Database | PostgreSQL | 16 |
-| Security | Spring Security + JJWT | 0.12.7 |
+| Persistence | Spring Data JPA + JDBC | Spring Boot managed |
+| Databases | PostgreSQL, H2 | PostgreSQL runtime, H2 runtime/test support |
+| Security | Spring Security + JJWT | JJWT 0.12.7 |
 | DTO mapping | MapStruct | 1.6.3 |
-| Env management | Spring Dotenv | 5.1.0 |
+| Env loading | Spring Dotenv | 5.1.0 |
 | API docs | Springdoc OpenAPI | 2.8.5 |
-| Frontend framework | Vue 3 | 3.5.x |
-| Build tool | Vite | 7.x |
-| Styling | Tailwind CSS + Flowbite | 3.4 / 4.0 |
-| Containers | Docker + Docker Compose | — |
+| Frontend | Vue, Vue Router | Vue 3.5.x |
+| Frontend build | Vite | 7.x |
+| Styling | Tailwind CSS, Flowbite, Flowbite Vue | Tailwind 3.4.x, Flowbite 4.x |
+| Icons | Lucide Vue | 1.x |
+| Containers | Docker, Docker Compose | Backend JRE image, frontend Nginx image |
 
 ---
 
 ## Prerequisites
 
-- **Docker** and **Docker Compose** — for the recommended Compose setup
-- **Or:** Java 21, Maven 3.9+, Node.js 20+, and PostgreSQL 16 — for local setup
+For Docker Compose:
+
+- Docker
+- Docker Compose
+
+For local development:
+
+- Java 21
+- PostgreSQL 16 or another PostgreSQL version compatible with the JDBC driver
+- Node.js `^20.19.0` or `>=22.12.0` for Vite 7
+- Maven is optional because the repository includes `./mvnw`
 
 ---
 
-## Running the Application
-
-### Docker Compose (recommended)
+## Run With Docker Compose
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/josephhdiazg/ideal10spring.git
 cd ideal10spring
 
-# 2. Set up environment variables
 cp .env.example .env
-# Edit .env with real values (see Environment Variables section)
+# Edit .env and provide a real JWT_SECRET.
 
-# 3. Start all services
 docker compose up --build
 ```
 
-| Service | URL |
+Default services:
+
+| Service | URL/port |
 |---|---|
-| Frontend (Vue) | http://localhost:5173 |
-| Backend (API) | http://localhost:8080 |
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | PostgreSQL | localhost:5432 |
 
-```bash
-# Stop services
-docker compose down
+Stop services:
 
-# Stop and remove volumes (resets the database)
+```bash
+docker compose down
+```
+
+Reset the database volume:
+
+```bash
 docker compose down -v
 ```
 
 ---
 
-### Local Setup (without Docker)
-
-#### Backend
+## Run Locally
 
 ```bash
-# 1. Make sure PostgreSQL is running and the database exists
+git clone https://github.com/josephhdiazg/ideal10spring.git
+cd ideal10spring
+```
+
+### Backend
+
+Create a PostgreSQL database and configure environment variables:
+
+```bash
 createdb ideal10spring
-
-# 2. Configure environment variables
 cp .env.example .env
-# Edit .env with your local connection details
+```
 
-# 3. Run the backend
+Update `.env` with local database credentials and a real `JWT_SECRET`, then run:
+
+```bash
 ./mvnw spring-boot:run
 ```
 
-API available at `http://localhost:8080`.
+The API starts on `http://localhost:8080`.
 
-#### Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -123,58 +158,59 @@ npm install
 npm run dev
 ```
 
-Frontend available at `http://localhost:5173`.
+The frontend starts on `http://localhost:5173`.
 
-> The frontend proxies `/api/*` requests to `http://localhost:8080`. If you change the backend port, update `frontend/vite.config.js` accordingly.
+During local development, `frontend/vite.config.js` proxies `/api` requests to `http://localhost:8080`.
 
 ---
 
-## Environment Variables
+## Configuration
 
-Copy `.env.example` to `.env` and fill in the values:
+`.env.example` defines the required backend settings:
 
-```bash
-cp .env.example .env
-```
+| Variable | Required | Description | Example |
+|---|---:|---|---|
+| `DB_URL` | Yes | JDBC connection URL | `jdbc:postgresql://localhost:5432/ideal10spring` |
+| `DB_USERNAME` | Yes | Database username | `ideal10spring` |
+| `DB_PASSWORD` | Yes | Database password | `ideal10spring` |
+| `DB_DRIVER` | Yes | JDBC driver class | `org.postgresql.Driver` |
+| `JWT_SECRET` | Yes | Base64-encoded HMAC secret | generated value |
+| `JWT_EXPIRATION` | Yes | Token lifetime in milliseconds | `86400000` |
+| `SPRING_JPA_SHOW_SQL` | No | Overrides SQL logging when supplied | `false` |
+| `VITE_API_BASE_URL` | No | Frontend build-time API base URL | `http://localhost:8080` |
 
-| Variable | Description | Example |
-|---|---|---|
-| `DB_URL` | JDBC connection URL | `jdbc:postgresql://localhost:5432/ideal10spring` |
-| `DB_USERNAME` | PostgreSQL username | `ideal10spring` |
-| `DB_PASSWORD` | PostgreSQL password | `ideal10spring` |
-| `DB_DRIVER` | JDBC driver class | `org.postgresql.Driver` |
-| `JWT_SECRET` | Base64-encoded HMAC secret (min. 32 bytes) | *(generate with command below)* |
-| `JWT_EXPIRATION` | Token lifetime in milliseconds | `86400000` *(24 h)* |
-| `SPRING_JPA_SHOW_SQL` | Print SQL to console | `false` |
-
-**Generate a secure `JWT_SECRET`:**
+Generate a development JWT secret:
 
 ```bash
 openssl rand -base64 32
 ```
 
-> **Warning:** Never commit the `.env` file. It is already listed in `.gitignore`.
+Do not commit `.env`; it is ignored by `.gitignore`.
 
 ---
 
-## Test Users
+## Seeded Development Users
 
-The application seeds one user per role on startup (development only):
+`DataInitializer` seeds one user for each role if the user does not already exist:
 
-| Email | Password | Role |
+| Email/username | Password | Role |
 |---|---|---|
 | `admin@ideal10.com` | `admin123` | `ADMINISTRADOR` |
 | `hacienda@ideal10.com` | `hacienda123` | `FUNCIONARIO_HACIENDA` |
 | `tesoreria@ideal10.com` | `tesoreria123` | `TESORERIA` |
 | `contribuyente@ideal10.com` | `contribuyente123` | `CONTRIBUYENTE` |
 
+These credentials are suitable for local development only.
+
 ---
 
-## Main Endpoints
+## API Surface
 
-Base path: `/api/v1`. All protected endpoints require:
+Base path: `/api/v1`
 
-```
+Protected endpoints require:
+
+```http
 Authorization: Bearer <token>
 ```
 
@@ -182,8 +218,10 @@ Authorization: Bearer <token>
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/v1/auth/login` | Public | Sign in and receive a JWT |
-| `GET` | `/api/v1/auth/me` | Authenticated | Get current user info |
+| `POST` | `/api/v1/auth/login` | Public | Authenticate and receive a JWT |
+| `GET` | `/api/v1/auth/me` | Authenticated | Return the current username and roles |
+
+Login request:
 
 ```http
 POST /api/v1/auth/login
@@ -195,7 +233,8 @@ Content-Type: application/json
 }
 ```
 
-Response:
+Login response shape:
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
@@ -205,111 +244,85 @@ Response:
 }
 ```
 
----
-
 ### Properties
 
-| Method | Endpoint | Roles | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/properties` | All authenticated | List properties |
-| `GET` | `/api/v1/properties/{id}` | All authenticated | Get property |
-| `POST` | `/api/v1/properties` | ADMINISTRADOR, HACIENDA | Create property |
-| `PUT` | `/api/v1/properties/{id}` | ADMINISTRADOR, HACIENDA | Update property |
-| `DELETE` | `/api/v1/properties/{id}` | Authenticated | Delete property |
-| `GET` | `/api/v1/properties/{id}/owners` | All authenticated | List owners of a property |
-| `POST` | `/api/v1/properties/{id}/owners` | ADMINISTRADOR, HACIENDA | Assign owner to property |
-| `PUT` | `/api/v1/properties/{id}/owners/{ownerId}` | ADMINISTRADOR, HACIENDA | Update owner assignment |
-| `DELETE` | `/api/v1/properties/{id}/owners/{ownerId}` | Authenticated | Remove owner |
+| Method | Endpoint | Access |
+|---|---|---|
+| `GET` | `/api/v1/properties` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `GET` | `/api/v1/properties/{id}` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `POST` | `/api/v1/properties` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA` |
+| `PUT` | `/api/v1/properties/{id}` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA` |
+| `DELETE` | `/api/v1/properties/{id}` | Any authenticated user |
+| `GET` | `/api/v1/properties/{propertyId}/owners` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `POST` | `/api/v1/properties/{propertyId}/owners` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA` |
+| `PUT` | `/api/v1/properties/{propertyId}/owners/{ownerId}` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA` |
+| `DELETE` | `/api/v1/properties/{propertyId}/owners/{ownerId}` | Any authenticated user |
 
----
+### Liquidations, Payments, and Certificates
 
-### Assessments (Liquidations)
-
-| Method | Endpoint | Roles | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/liquidations` | All authenticated | List assessments |
-| `GET` | `/api/v1/liquidations/{id}` | All authenticated | Get assessment |
-| `POST` | `/api/v1/liquidations` | ADMINISTRADOR, HACIENDA, CONTRIBUYENTE | Create assessment |
-| `GET` | `/api/v1/liquidations/{id}/payments` | All authenticated | List payments |
-| `POST` | `/api/v1/liquidations/{id}/payments` | ADMINISTRADOR, HACIENDA, CONTRIBUYENTE | Register payment |
-| `POST` | `/api/v1/liquidations/{id}/clearance-certificates` | ADMINISTRADOR, TESORERIA | Issue clearance certificate |
-
----
+| Method | Endpoint | Access |
+|---|---|---|
+| `GET` | `/api/v1/liquidations` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `GET` | `/api/v1/liquidations?propertyId={id}` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `GET` | `/api/v1/liquidations/{id}` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `POST` | `/api/v1/liquidations` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `CONTRIBUYENTE` |
+| `GET` | `/api/v1/liquidations/{id}/payments` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA`, `CONTRIBUYENTE` |
+| `POST` | `/api/v1/liquidations/{id}/payments` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `CONTRIBUYENTE` |
+| `POST` | `/api/v1/liquidations/{id}/clearance-certificates` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `CONTRIBUYENTE` |
+| `GET` | `/api/v1/clearance-certificates` | `ADMINISTRADOR`, `TESORERIA` |
+| `GET` | `/api/v1/clearance-certificates/{id}` | `ADMINISTRADOR`, `TESORERIA` |
 
 ### Fiscal Configuration
 
-| Method | Endpoint | Roles | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/fiscal-years` | ADMINISTRADOR, TESORERIA | List fiscal years |
-| `GET` | `/api/v1/fiscal-years/active` | ADMINISTRADOR, TESORERIA | Get active fiscal year |
-| `POST` | `/api/v1/fiscal-years` | ADMINISTRADOR, TESORERIA | Create fiscal year |
-| `PUT` | `/api/v1/fiscal-years/{id}` | ADMINISTRADOR, TESORERIA | Update fiscal year |
-| `DELETE` | `/api/v1/fiscal-years/{id}` | ADMINISTRADOR, TESORERIA | Delete fiscal year |
-| `GET` | `/api/v1/tax-rates` | ADMINISTRADOR, TESORERIA | List tax rates |
-| `GET` | `/api/v1/tax-rates/fiscal-year/{id}` | ADMINISTRADOR, TESORERIA | Rates by fiscal year |
-| `POST` | `/api/v1/tax-rates` | ADMINISTRADOR, TESORERIA | Create tax rate |
-| `PUT` | `/api/v1/tax-rates/{id}` | ADMINISTRADOR, TESORERIA | Update tax rate |
-| `GET` | `/api/v1/tax-benefits` | ADMINISTRADOR, TESORERIA | List tax benefits |
-| `GET` | `/api/v1/tax-benefits/by-classification` | ADMINISTRADOR, TESORERIA | Benefits by property class |
-| `POST` | `/api/v1/tax-benefits` | ADMINISTRADOR, TESORERIA | Create tax benefit |
-| `PUT` | `/api/v1/tax-benefits/{id}` | ADMINISTRADOR, TESORERIA | Update tax benefit |
-| `GET` | `/api/v1/charge-types` | ADMINISTRADOR, TESORERIA | List charge types |
-| `POST` | `/api/v1/charge-types` | ADMINISTRADOR, TESORERIA | Create charge type |
-| `PUT` | `/api/v1/charge-types/{id}` | ADMINISTRADOR, TESORERIA | Update charge type |
+These modules are restricted to `ADMINISTRADOR` and `TESORERIA`.
 
----
-
-### Clearance Certificates
-
-| Method | Endpoint | Roles | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/clearance-certificates` | ADMINISTRADOR, TESORERIA | List certificates |
-| `GET` | `/api/v1/clearance-certificates/{id}` | ADMINISTRADOR, TESORERIA | Get certificate |
-
----
+| Resource | Endpoints |
+|---|---|
+| Fiscal years | `GET /api/v1/fiscal-years`, `GET /api/v1/fiscal-years/active`, `GET /api/v1/fiscal-years/{id}`, `POST /api/v1/fiscal-years`, `PUT /api/v1/fiscal-years/{id}`, `DELETE /api/v1/fiscal-years/{id}` |
+| Tax rates | `GET /api/v1/tax-rates`, `GET /api/v1/tax-rates/{id}`, `GET /api/v1/tax-rates/fiscal-year/{fiscalYearId}`, `POST /api/v1/tax-rates`, `PUT /api/v1/tax-rates/{id}`, `DELETE /api/v1/tax-rates/{id}` |
+| Tax benefits | `GET /api/v1/tax-benefits`, `GET /api/v1/tax-benefits/{id}`, `GET /api/v1/tax-benefits/by-classification?classification={classification}`, `POST /api/v1/tax-benefits`, `PUT /api/v1/tax-benefits/{id}`, `DELETE /api/v1/tax-benefits/{id}` |
+| Charge types | `GET /api/v1/charge-types`, `GET /api/v1/charge-types/{id}`, `POST /api/v1/charge-types`, `PUT /api/v1/charge-types/{id}`, `DELETE /api/v1/charge-types/{id}` |
 
 ### Other Modules
 
-| Method | Endpoint | Description |
+| Resource | Endpoints | Access |
 |---|---|---|
-| `GET/POST/PUT/DELETE` | `/api/v1/owners/**` | Owner management |
-| `GET/POST/PUT/DELETE` | `/api/v1/municipalities/**` | Municipality management |
-| `GET` | `/api/v1/dashboard/predial` | System metrics |
-| `GET` | `/api/v1/audit/**` | Audit log *(ADMINISTRADOR only)* |
-| `GET/POST/PUT/DELETE` | `/api/v1/users/**` | User management *(ADMINISTRADOR only)* |
+| Owners | `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `DELETE /{id}` under `/api/v1/owners` | Any authenticated user |
+| Municipalities | `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `DELETE /{id}` under `/api/v1/municipalities` | Any authenticated user |
+| Dashboard | `GET /api/v1/dashboard/predial` | `ADMINISTRADOR`, `FUNCIONARIO_HACIENDA`, `TESORERIA` |
 
 ---
 
-## Interactive Docs — Swagger UI
+## Swagger UI
 
-With the application running, open:
+With the backend running:
 
-```
+```text
 http://localhost:8080/swagger-ui.html
 ```
 
-To test protected endpoints, click **Authorize** and enter your token:
+The raw OpenAPI document is served at:
 
+```text
+http://localhost:8080/api-docs
 ```
-Bearer eyJhbGciOiJIUzI1NiJ9...
-```
-
-The raw OpenAPI spec is available at `http://localhost:8080/api-docs`.
 
 ---
 
-## CI / CD
+## CI/CD
 
-Two GitHub Actions workflows are defined under `.github/workflows/`:
+Two workflows are defined under `.github/workflows`.
 
-| Workflow | File | Trigger | Purpose |
+| Workflow | File | Trigger | Behavior |
 |---|---|---|---|
-| **Test** | `test.yml` | Push / PR to `main` or `develop` | Runs `./mvnw test` on Java 21 |
-| **Deploy** | `deploy.yml` | Push to `main` or `develop` | Builds and publishes Docker images to GitHub Container Registry |
+| Test | `test.yml` | Push/PR to `main` or `develop`, manual dispatch | Runs `./mvnw test` on Java 21 |
+| Deploy | `deploy.yml` | Push to `main` or `develop`, manual dispatch | Builds and pushes backend and frontend images to GHCR |
 
-Published images:
+Published image names:
 
-```
-ghcr.io/josephhdiazg/ideal10spring/backend:<branch|sha>
-ghcr.io/josephhdiazg/ideal10spring/frontend:<branch|sha>
+```text
+ghcr.io/josephhdiazg/ideal10spring/backend:<branch>
+ghcr.io/josephhdiazg/ideal10spring/backend:sha-<short-sha>
+ghcr.io/josephhdiazg/ideal10spring/frontend:<branch>
+ghcr.io/josephhdiazg/ideal10spring/frontend:sha-<short-sha>
 ```
