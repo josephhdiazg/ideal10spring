@@ -23,7 +23,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -33,7 +34,11 @@ button {
 
 @layer components {
   .app-sidebar {
-    @apply hidden w-72 shrink-0 border-r border-sky-100 bg-white/90 px-5 py-5 backdrop-blur lg:block;
+    @apply fixed inset-y-0 left-0 z-40 hidden w-72 shrink-0 border-r border-sky-100 bg-white px-5 py-5 shadow-soft lg:sticky lg:top-0 lg:block lg:h-screen lg:shadow-none;
+  }
+
+  .app-sidebar.is-open {
+    @apply block;
   }
 
   .app-topbar {
@@ -41,7 +46,7 @@ button {
   }
 
   .brand-lockup {
-    @apply flex items-center gap-3 px-2;
+    @apply flex items-center gap-3 px-2 no-underline;
   }
 
   .brand-mark {
@@ -93,7 +98,7 @@ button {
   }
 
   .btn {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-sky-100;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-primary {
@@ -121,7 +126,7 @@ button {
   }
 
   .field-control {
-    @apply h-11 w-full rounded-lg border border-sky-100 bg-sky-50/50 px-3 text-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100;
+    @apply h-11 w-full rounded-lg border border-sky-100 bg-sky-50/50 px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100;
   }
 
   .search-box {
@@ -157,11 +162,11 @@ button {
   }
 
   .data-table td {
-    @apply whitespace-nowrap px-5 py-4;
+    @apply whitespace-nowrap px-5 py-4 align-top;
   }
 
   .table-link {
-    @apply ml-3 text-sm font-semibold text-sky-700 hover:text-sky-900;
+    @apply ml-3 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 hover:text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-200;
   }
 
   .table-link.danger {
