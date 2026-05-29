@@ -55,9 +55,33 @@ const displayFields = computed(() => withReferenceOptions(props.resource.fields)
 const filterFields = computed(() => withReferenceOptions(props.resource.filters || []))
 const ownerFields = computed(() => withReferenceOptions(propertyOwnerFields))
 const paymentFields = computed(() => paymentFormFields)
-const selectedDetails = computed(() =>
-  selected.value ? Object.entries(selected.value).filter(([key]) => key !== 'details') : []
-)
+function humanizeKey(key) {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())
+}
+
+function formatDetailValue(key, value, row) {
+  const col = props.resource.columns.find((c) => c.key === key)
+  if (col?.value) return col.value(row)
+  if (value === null || value === undefined) return '-'
+  if (typeof value === 'boolean') return value ? 'Activo' : 'Inactivo'
+  if (typeof value === 'object') return value.name ?? value.fullName ?? value.description ?? JSON.stringify(value)
+  return String(value)
+}
+
+const selectedDetails = computed(() => {
+  if (!selected.value) return []
+  return Object.entries(selected.value)
+    .filter(([key]) => key !== 'details')
+    .map(([key, value]) => {
+      const field = props.resource.fields.find((f) => f.key === key)
+      const col = props.resource.columns.find((c) => c.key === key)
+      return {
+        key,
+        label: field?.label ?? col?.label ?? humanizeKey(key),
+        displayValue: formatDetailValue(key, value, selected.value),
+      }
+    })
+})
 const formTitle = computed(() =>
   editing.value ? `Editar ${props.resource.singular}` : `Nuevo ${props.resource.singular}`
 )
@@ -373,7 +397,7 @@ onMounted(async () => {
     <!-- Record details modal -->
     <CrudModal
       :open="detailsOpen"
-      :title="`Detalle — ${resource.singular}`"
+      :title="`Detalle - ${resource.singular}`"
       :subtitle="selected ? `Registro #${selected.id}` : ''"
       max-width="max-w-3xl"
       @close="detailsOpen = false"
@@ -390,11 +414,9 @@ onMounted(async () => {
           <h3 class="section-title">Campos del registro</h3>
         </div>
         <dl class="grid gap-2 sm:grid-cols-2 mb-6">
-          <div v-for="[key, value] in selectedDetails" :key="key" class="rounded-lg bg-sky-50 p-3">
-            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ key }}</dt>
-            <dd class="mt-1 break-words text-sm font-medium text-slate-800">
-              {{ typeof value === 'object' && value !== null ? JSON.stringify(value) : value ?? '-' }}
-            </dd>
+          <div v-for="entry in selectedDetails" :key="entry.key" class="rounded-lg bg-sky-50 p-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ entry.label }}</dt>
+            <dd class="mt-1 break-words text-sm font-medium text-slate-800">{{ entry.displayValue }}</dd>
           </div>
         </dl>
       </div>
