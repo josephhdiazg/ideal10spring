@@ -3,8 +3,8 @@ package com.ideal_10.ideal10spring.services;
 import com.ideal_10.ideal10spring.dtos.ClearanceCertificateResponse;
 import com.ideal_10.ideal10spring.entities.ClearanceCertificate;
 import com.ideal_10.ideal10spring.entities.PropertyAssessment;
-import com.ideal_10.ideal10spring.enums.EstadoCertificado;
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
+import com.ideal_10.ideal10spring.enums.CertificateStatus;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
 import com.ideal_10.ideal10spring.exceptions.ResourceNotFoundException;
 import com.ideal_10.ideal10spring.repositories.ClearanceCertificateRepository;
 import com.ideal_10.ideal10spring.repositories.PropertyAssessmentRepository;
@@ -46,12 +46,12 @@ public class ClearanceCertificateService {
 
     private ClearanceCertificateResponse createCertificate(Long assessmentId) {
         PropertyAssessment assessment = assessmentService.getEntity(assessmentId);
-        if (assessment.getStatus() != EstadoLiquidacion.PAGADA) {
-            throw new IllegalArgumentException("Clearance certificate requires a paid liquidation");
+        if (assessment.getStatus() != AssessmentStatus.PAID) {
+            throw new IllegalArgumentException("Clearance certificate requires a paid assessment");
         }
         boolean hasPendingDebt = assessmentRepository.existsByPropertyIdAndStatusIn(
                 assessment.getProperty().getId(),
-                List.of(EstadoLiquidacion.PENDIENTE, EstadoLiquidacion.PARCIAL, EstadoLiquidacion.VENCIDA)
+                List.of(AssessmentStatus.PENDING, AssessmentStatus.PARTIAL, AssessmentStatus.OVERDUE)
         );
         if (hasPendingDebt) {
             throw new IllegalArgumentException("Property has pending debts");
@@ -61,7 +61,7 @@ public class ClearanceCertificateService {
         certificate.setAssessment(assessment);
         certificate.setCertificateNumber(buildCertificateNumber(assessment));
         certificate.setIssuedAt(LocalDateTime.now());
-        certificate.setStatus(EstadoCertificado.GENERADO);
+        certificate.setStatus(CertificateStatus.ISSUED);
         return toResponse(certificateRepository.save(certificate));
     }
 

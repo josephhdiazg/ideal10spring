@@ -1,7 +1,7 @@
 package com.ideal_10.ideal10spring.entities;
 
-import com.ideal_10.ideal10spring.enums.EstadoPago;
-import com.ideal_10.ideal10spring.enums.MetodoPago;
+import com.ideal_10.ideal10spring.enums.PaymentStatus;
+import com.ideal_10.ideal10spring.enums.PaymentMethod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,7 +45,7 @@ public class PropertyPayment {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private MetodoPago paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @Size(max = 80)
     @Column(length = 80)
@@ -58,5 +58,5 @@ public class PropertyPayment {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private EstadoPago status = EstadoPago.REGISTRADO;
+    private PaymentStatus status = PaymentStatus.REGISTERED;
 }
