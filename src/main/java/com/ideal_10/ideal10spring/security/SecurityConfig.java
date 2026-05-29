@@ -24,6 +24,7 @@ public class SecurityConfig {
 	private static final String ADMINISTRADOR = "ADMINISTRADOR";
 	private static final String FUNCIONARIO_HACIENDA = "FUNCIONARIO_HACIENDA";
 	private static final String TESORERIA = "TESORERIA";
+	private static final String CONTRIBUYENTE = "CONTRIBUYENTE";
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final JwtAuthEntryPoint jwtAuthEntryPoint;
@@ -61,15 +62,15 @@ public class SecurityConfig {
 						.requestMatchers("/api/v1/charge-types/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
 						.requestMatchers("/api/v1/tax-benefits/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
 						.requestMatchers(HttpMethod.GET, "/api/v1/properties/**")
-						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, TESORERIA)
+						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, TESORERIA, CONTRIBUYENTE)
 						.requestMatchers(HttpMethod.POST, "/api/v1/properties/**")
 						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA)
 						.requestMatchers(HttpMethod.PUT, "/api/v1/properties/**")
 						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA)
 						.requestMatchers(HttpMethod.GET, "/api/v1/liquidations/**")
-						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, TESORERIA)
+						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, TESORERIA, CONTRIBUYENTE)
 						.requestMatchers(HttpMethod.POST, "/api/v1/liquidations/**")
-						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA)
+						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, CONTRIBUYENTE)
 						.requestMatchers("/api/v1/clearance-certificates/**").hasAnyRole(ADMINISTRADOR, TESORERIA)
 						.requestMatchers("/api/v1/dashboard/**")
 						.hasAnyRole(ADMINISTRADOR, FUNCIONARIO_HACIENDA, TESORERIA)
