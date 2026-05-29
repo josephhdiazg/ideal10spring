@@ -1,7 +1,7 @@
 package com.ideal_10.ideal10spring.repositories;
 
 import com.ideal_10.ideal10spring.entities.PropertyAssessment;
-import com.ideal_10.ideal10spring.enums.EstadoLiquidacion;
+import com.ideal_10.ideal10spring.enums.AssessmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,13 +17,13 @@ public interface PropertyAssessmentRepository extends JpaRepository<PropertyAsse
 
     List<PropertyAssessment> findByPropertyId(Long propertyId);
 
-    long countByStatus(EstadoLiquidacion status);
+    long countByStatus(AssessmentStatus status);
 
-    boolean existsByPropertyIdAndStatusIn(Long propertyId, Collection<EstadoLiquidacion> statuses);
+    boolean existsByPropertyIdAndStatusIn(Long propertyId, Collection<AssessmentStatus> statuses);
 
     @Query("select coalesce(sum(l.totalAmount), 0) from PropertyAssessment l")
     BigDecimal sumTotalAmount();
 
     @Query("select coalesce(sum(l.balance), 0) from PropertyAssessment l where l.status in :statuses")
-    BigDecimal sumBalanceByStatuses(@Param("statuses") Collection<EstadoLiquidacion> statuses);
+    BigDecimal sumBalanceByStatuses(@Param("statuses") Collection<AssessmentStatus> statuses);
 }
