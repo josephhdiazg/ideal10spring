@@ -9,6 +9,18 @@ Set `JWT_SECRET` to a base64-encoded 32-byte secret for local token signing.
 Spring Dotenv loads `.env` automatically when the application starts. Real
 environment variables take precedence over values in `.env`.
 
+## GitHub Actions
+
+This repository includes two workflows under `.github/workflows`:
+
+| Workflow | File | Triggers | Purpose |
+| --- | --- | --- | --- |
+| `test` | `.github/workflows/test.yml` | Pushes and pull requests targeting `main` or `develop`, plus manual runs | Sets up Java 21 and runs `./mvnw test` with Maven dependency caching. |
+| `deploy` | `.github/workflows/deploy.yml` | Pushes to `main` or `develop`, plus manual runs | Builds the Docker image and publishes it to GitHub Container Registry as `ghcr.io/${{ github.repository }}`. |
+
+The deploy workflow uses the repository `GITHUB_TOKEN` with package write
+permissions to push images to GitHub Container Registry.
+
 ## Test users
 
 The application seeds one user per role on startup:
