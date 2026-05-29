@@ -1,6 +1,6 @@
 package com.ideal_10.ideal10spring.controllers;
 
-import com.ideal_10.ideal10spring.dtos.DashboardPredialResponse;
+import com.ideal_10.ideal10spring.dtos.PropertyDashboardResponse;
 import com.ideal_10.ideal10spring.services.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +15,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/predial")
-    public DashboardPredialResponse getPredialMetrics() {
-        return dashboardService.getPredialMetrics();
+    public PropertyDashboardResponse getPropertyTaxMetrics() {
+        return dashboardService.getPropertyTaxMetrics();
     }
 }

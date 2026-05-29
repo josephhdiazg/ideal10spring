@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record LiquidacionPredialRequest(
+public record PropertyAssessmentRequest(
         @NotNull Long propertyId,
         @NotNull @Positive Integer fiscalYear,
         @DecimalMin("0.00") BigDecimal discountAmount,

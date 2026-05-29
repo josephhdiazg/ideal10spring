@@ -6,9 +6,9 @@ import com.ideal_10.ideal10spring.enums.MetodoPago;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PagoPredialResponse(
+public record PropertyPaymentResponse(
         Long id,
-        Long liquidacionId,
+        Long assessmentId,
         BigDecimal amount,
         MetodoPago paymentMethod,
         String reference,
